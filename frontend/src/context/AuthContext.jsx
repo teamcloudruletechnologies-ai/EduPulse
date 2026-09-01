@@ -42,10 +42,16 @@ export const AuthProvider = ({ children }) => {
 
   const switchDemoRole = async (role) => {
     const demoCredentials = {
-      STUDENT: { email: 'student@edtech.com', password: 'Password123!' },
-      MENTOR: { email: 'mentor@edtech.com', password: 'Password123!' },
+      STUDENT: { email: 'sailesh@edtech.com', password: 'Password123!' },
+      MENTOR: { email: 'viji@edtech.com', password: 'Password123!' },
       INSTITUTION_ADMIN: { email: 'institution@edtech.com', password: 'Password123!' },
       SUPER_ADMIN: { email: 'admin@edtech.com', password: 'Password123!' },
+      SAILESH: { email: 'sailesh@edtech.com', password: 'Password123!' },
+      SUJITHA: { email: 'sujitha@edtech.com', password: 'Password123!' },
+      ISAAC: { email: 'isaac@edtech.com', password: 'Password123!' },
+      HARRISH: { email: 'harrish@edtech.com', password: 'Password123!' },
+      PRAVEEN: { email: 'praveen@edtech.com', password: 'Password123!' },
+      VIJI: { email: 'viji@edtech.com', password: 'Password123!' },
     };
 
     const creds = demoCredentials[role] || demoCredentials.STUDENT;

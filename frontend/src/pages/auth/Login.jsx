@@ -95,37 +95,77 @@ export const Login = () => {
 
         {/* Demo Quick Logins */}
         <div className="border-t border-slate-200 pt-6">
-          <p className="text-center text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-3">
-            Instant Demo Logins
+          <p className="text-center text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+            👨‍🏫 Mentor & 🎓 Students
           </p>
-          <div className="grid grid-cols-2 gap-2.5">
+
+          {/* Mentor Viji */}
+          <div className="mb-3">
             <button
-              onClick={() => handleQuickDemoLogin('STUDENT')}
-              className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-left hover:bg-brand-50 hover:border-brand-300 transition-colors shadow-xs"
+              type="button"
+              onClick={() => handleQuickDemoLogin('VIJI')}
+              className="w-full rounded-xl border border-purple-300 bg-purple-50 p-2.5 text-left hover:bg-purple-100 transition-all shadow-xs flex items-center justify-between"
             >
-              <span className="block text-xs font-bold text-slate-900">🎓 Student</span>
-              <span className="text-[10px] text-slate-500">Learning & Tasks</span>
+              <div>
+                <span className="block text-xs font-extrabold text-purple-950">👨‍🏫 Viji (Mentor)</span>
+                <span className="text-[10px] text-purple-700">viji@edtech.com • Lead Tech Mentor</span>
+              </div>
+              <span className="text-xs font-bold text-purple-800 bg-purple-200 px-2 py-0.5 rounded-md">Host</span>
+            </button>
+          </div>
+
+          {/* 5 Students: Sailesh, Sujitha, Isaac, Harrish, Praveen */}
+          <div className="grid grid-cols-2 gap-2 mb-3">
+            <button
+              type="button"
+              onClick={() => handleQuickDemoLogin('SAILESH')}
+              className="rounded-xl border border-blue-200 bg-blue-50 p-2 text-left hover:bg-blue-100 transition-colors shadow-xs"
+            >
+              <span className="block text-xs font-bold text-blue-950">🎓 Sailesh</span>
+              <span className="text-[9px] text-blue-700">sailesh@edtech.com</span>
             </button>
             <button
-              onClick={() => handleQuickDemoLogin('MENTOR')}
-              className="rounded-xl border border-purple-200 bg-purple-50 p-3 text-left hover:bg-purple-100 transition-colors shadow-xs"
+              type="button"
+              onClick={() => handleQuickDemoLogin('SUJITHA')}
+              className="rounded-xl border border-pink-200 bg-pink-50 p-2 text-left hover:bg-pink-100 transition-colors shadow-xs"
             >
-              <span className="block text-xs font-bold text-purple-950">👨‍🏫 Mentor</span>
-              <span className="text-[10px] text-purple-700">Projects & Reviews</span>
+              <span className="block text-xs font-bold text-pink-950">🎓 Sujitha</span>
+              <span className="text-[9px] text-pink-700">sujitha@edtech.com</span>
             </button>
             <button
-              onClick={() => handleQuickDemoLogin('INSTITUTION_ADMIN')}
-              className="rounded-xl border border-blue-200 bg-blue-50 p-3 text-left hover:bg-blue-100 transition-colors shadow-xs"
+              type="button"
+              onClick={() => handleQuickDemoLogin('ISAAC')}
+              className="rounded-xl border border-emerald-200 bg-emerald-50 p-2 text-left hover:bg-emerald-100 transition-colors shadow-xs"
             >
-              <span className="block text-xs font-bold text-blue-950">🏛️ Institution</span>
-              <span className="text-[10px] text-blue-700">Students & Staff</span>
+              <span className="block text-xs font-bold text-emerald-950">🎓 Isaac</span>
+              <span className="text-[9px] text-emerald-700">isaac@edtech.com</span>
             </button>
             <button
+              type="button"
+              onClick={() => handleQuickDemoLogin('HARRISH')}
+              className="rounded-xl border border-amber-200 bg-amber-50 p-2 text-left hover:bg-amber-100 transition-colors shadow-xs"
+            >
+              <span className="block text-xs font-bold text-amber-950">🎓 Harrish</span>
+              <span className="text-[9px] text-amber-700">harrish@edtech.com</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleQuickDemoLogin('PRAVEEN')}
+              className="col-span-2 rounded-xl border border-indigo-200 bg-indigo-50 p-2 text-left hover:bg-indigo-100 transition-colors shadow-xs"
+            >
+              <span className="block text-xs font-bold text-indigo-950">🎓 Praveen</span>
+              <span className="text-[9px] text-indigo-700">praveen@edtech.com</span>
+            </button>
+          </div>
+
+          <div className="border-t border-slate-100 pt-2 flex items-center justify-between text-[11px] text-slate-400">
+            <span>Password for all: <strong className="text-slate-600 font-mono">Password123!</strong></span>
+            <button
+              type="button"
               onClick={() => handleQuickDemoLogin('SUPER_ADMIN')}
-              className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-left hover:bg-emerald-100 transition-colors shadow-xs"
+              className="text-emerald-700 font-semibold hover:underline"
             >
-              <span className="block text-xs font-bold text-emerald-950">🛡️ Super Admin</span>
-              <span className="text-[10px] text-emerald-700">System Controls</span>
+              Admin Portal
             </button>
           </div>
         </div>
