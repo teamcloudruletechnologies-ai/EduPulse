@@ -30,7 +30,7 @@ const bookMentorSession = async (req, res, next) => {
         topic,
         scheduledAt: new Date(scheduledAt),
         duration: duration || 30,
-        meetingUrl: 'https://meet.jit.si/EdTechMentorSession-' + Math.random().toString(36).substring(7),
+        meetingUrl: '/meeting/session-' + Math.random().toString(36).substring(7) + '?topic=' + encodeURIComponent(topic || 'Mentor Session'),
         status: 'SCHEDULED',
         notes,
       },
