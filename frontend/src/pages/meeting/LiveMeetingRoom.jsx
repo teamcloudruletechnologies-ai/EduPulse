@@ -30,7 +30,36 @@ import {
   Check,
   Ban,
   Hourglass,
+  Pin,
+  LayoutGrid,
+  Maximize2,
 } from 'lucide-react';
+
+const COHORT_STUDENTS = [
+  { id: 'viji-mentor', name: 'Viji (Mentor)', isHost: true, micEnabled: true, videoEnabled: false },
+  { id: 'sailesh-student', name: 'Sailesh (Student)', isHost: false, micEnabled: true, videoEnabled: false },
+  { id: 'sujitha-student', name: 'Sujitha (Student)', isHost: false, micEnabled: false, videoEnabled: false },
+  { id: 'isaac-student', name: 'Isaac (Student)', isHost: false, micEnabled: true, videoEnabled: false },
+  { id: 'harrish-student', name: 'Harrish (Student)', isHost: false, micEnabled: false, videoEnabled: false },
+  { id: 'praveen-student', name: 'Praveen (Student)', isHost: false, micEnabled: true, videoEnabled: false },
+];
+
+const getAvatarTheme = (name = '', isHost = false) => {
+  if (isHost) return { bg: 'from-purple-800 to-indigo-950', border: 'border-purple-500/40', text: 'text-purple-200' };
+  const lower = name.toLowerCase();
+  if (lower.includes('sailesh')) return { bg: 'from-blue-800 to-cyan-950', border: 'border-blue-500/40', text: 'text-blue-200' };
+  if (lower.includes('sujitha')) return { bg: 'from-pink-800 to-rose-950', border: 'border-pink-500/40', text: 'text-pink-200' };
+  if (lower.includes('isaac')) return { bg: 'from-emerald-800 to-teal-950', border: 'border-emerald-500/40', text: 'text-emerald-200' };
+  if (lower.includes('harrish')) return { bg: 'from-amber-800 to-yellow-950', border: 'border-amber-500/40', text: 'text-amber-200' };
+  if (lower.includes('praveen')) return { bg: 'from-indigo-800 to-slate-950', border: 'border-indigo-500/40', text: 'text-indigo-200' };
+  return { bg: 'from-slate-800 to-slate-950', border: 'border-slate-700', text: 'text-slate-200' };
+};
+
+const getInitials = (name = '') => {
+  const parts = name.replace(/\(.*?\)/g, '').trim().split(' ').filter(Boolean);
+  if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+  return name.slice(0, 2).toUpperCase() || 'EP';
+};
 
 // Error Boundary to completely prevent any white screens
 class MeetingErrorBoundary extends Component {
@@ -112,9 +141,10 @@ const LiveMeetingRoomComponent = () => {
   const [isStartingMedia, setIsStartingMedia] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
-  // Remote Participant State
-  const [remoteParticipant, setRemoteParticipant] = useState(null);
-  const [remoteVideoFrame, setRemoteVideoFrame] = useState(null);
+  // Google Meet Multi-Participant Peer State
+  const [peers, setPeers] = useState({});
+  const [pinnedPeerId, setPinnedPeerId] = useState(null);
+  const [simulateCohort, setSimulateCohort] = useState(true);
 
   // Call timer & UI Panels
   const [callDuration, setCallDuration] = useState(0);
@@ -268,50 +298,58 @@ const LiveMeetingRoomComponent = () => {
       }
 
       // 4. Participant Active in Call
-      if (msg.type === 'USER_IN_CALL') {
+      if (msg.type === 'USER_IN_CALL' || msg.type === 'PRESENCE_CONFIRM') {
         if (msg.sender !== displayName) {
-          setRemoteParticipant({
-            name: msg.sender,
-            isHost: msg.isHost,
-            videoEnabled: msg.videoEnabled,
-            micEnabled: msg.micEnabled,
-          });
+          setPeers((prev) => ({
+            ...prev,
+            [msg.sender]: {
+              id: msg.sender,
+              name: msg.sender,
+              isHost: msg.isHost || false,
+              videoEnabled: msg.videoEnabled ?? true,
+              micEnabled: msg.micEnabled ?? true,
+              frame: prev[msg.sender]?.frame || null,
+              lastSeen: Date.now(),
+            },
+          }));
 
-          sendBroadcast({
-            type: 'PRESENCE_CONFIRM',
-            sender: displayName,
-            isHost,
-            videoEnabled,
-            micEnabled,
-          });
-        }
-      }
-
-      // 5. Presence Confirmation
-      if (msg.type === 'PRESENCE_CONFIRM') {
-        if (msg.sender !== displayName) {
-          setRemoteParticipant({
-            name: msg.sender,
-            isHost: msg.isHost,
-            videoEnabled: msg.videoEnabled,
-            micEnabled: msg.micEnabled,
-          });
+          if (msg.type === 'USER_IN_CALL') {
+            sendBroadcast({
+              type: 'PRESENCE_CONFIRM',
+              sender: displayName,
+              isHost,
+              videoEnabled,
+              micEnabled,
+            });
+          }
         }
       }
 
       // 6. Live Video Frame Received (from Host or Peer)
       if (msg.type === 'VIDEO_FRAME') {
         if (msg.sender !== displayName) {
-          setRemoteVideoFrame(msg.frame);
-          if (!remoteParticipant) {
-            setRemoteParticipant({
+          setPeers((prev) => ({
+            ...prev,
+            [msg.sender]: {
+              id: msg.sender,
               name: msg.sender,
-              isHost: msg.isHost,
+              isHost: msg.isHost || false,
               videoEnabled: true,
-              micEnabled: true,
-            });
-          }
+              micEnabled: prev[msg.sender]?.micEnabled ?? true,
+              frame: msg.frame,
+              lastSeen: Date.now(),
+            },
+          }));
         }
+      }
+
+      // 7. User Left Call
+      if (msg.type === 'USER_LEFT') {
+        setPeers((prev) => {
+          const copy = { ...prev };
+          delete copy[msg.sender];
+          return copy;
+        });
       }
 
       // 7. Live Chat Message Received
@@ -445,22 +483,33 @@ const LiveMeetingRoomComponent = () => {
             if (sig.sender === displayName) return;
 
             if (sig.type === 'USER_IN_CALL' || sig.type === 'HEARTBEAT') {
-              setRemoteParticipant({
-                name: sig.sender,
-                isHost: sig.payload?.isHost || false,
-                videoEnabled: sig.payload?.videoEnabled ?? true,
-                micEnabled: sig.payload?.micEnabled ?? true,
-              });
+              setPeers((prev) => ({
+                ...prev,
+                [sig.sender]: {
+                  id: sig.sender,
+                  name: sig.sender,
+                  isHost: sig.payload?.isHost || false,
+                  videoEnabled: sig.payload?.videoEnabled ?? true,
+                  micEnabled: sig.payload?.micEnabled ?? true,
+                  frame: prev[sig.sender]?.frame || null,
+                  lastSeen: Date.now(),
+                },
+              }));
             }
 
             if (sig.type === 'VIDEO_FRAME' && sig.payload?.frame) {
-              setRemoteVideoFrame(sig.payload.frame);
-              setRemoteParticipant((prev) => prev || {
-                name: sig.sender,
-                isHost: sig.payload?.isHost || false,
-                videoEnabled: true,
-                micEnabled: true,
-              });
+              setPeers((prev) => ({
+                ...prev,
+                [sig.sender]: {
+                  id: sig.sender,
+                  name: sig.sender,
+                  isHost: sig.payload?.isHost || false,
+                  videoEnabled: true,
+                  micEnabled: prev[sig.sender]?.micEnabled ?? true,
+                  frame: sig.payload.frame,
+                  lastSeen: Date.now(),
+                },
+              }));
             }
 
             if (sig.type === 'CHAT_MESSAGE' && sig.payload?.message) {
@@ -471,8 +520,11 @@ const LiveMeetingRoomComponent = () => {
             }
 
             if (sig.type === 'USER_LEFT') {
-              setRemoteParticipant(null);
-              setRemoteVideoFrame(null);
+              setPeers((prev) => {
+                const copy = { ...prev };
+                delete copy[sig.sender];
+                return copy;
+              });
             }
           });
         }
@@ -998,6 +1050,20 @@ const LiveMeetingRoomComponent = () => {
             <span>{isHost ? '👑 Mentor (Host: Viji)' : '🎓 Student Mode (Sailesh)'}</span>
           </button>
 
+          {/* Toggle Google Meet Cohort Grid */}
+          <button
+            onClick={() => setSimulateCohort(!simulateCohort)}
+            className={`flex items-center space-x-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold transition-all cursor-pointer ${
+              simulateCohort
+                ? 'bg-blue-600/20 border-blue-500/50 text-blue-300 hover:bg-blue-600/30'
+                : 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700'
+            }`}
+            title="Toggle Google Meet Cohort Grid View"
+          >
+            <LayoutGrid className="h-3.5 w-3.5 text-blue-400" />
+            <span>{simulateCohort ? 'Grid View (Active)' : 'Single Tile'}</span>
+          </button>
+
           {/* Copy Meeting Link */}
           <button
             onClick={handleCopyLink}
@@ -1028,10 +1094,10 @@ const LiveMeetingRoomComponent = () => {
       {/* Main Video Conference Area */}
       <div className="flex-1 flex overflow-hidden relative">
         {/* Video Tiles Grid */}
-        <div className="flex-1 p-4 flex flex-col items-center justify-center overflow-y-auto">
+        <div className="flex-1 p-3 md:p-6 flex flex-col items-center justify-center overflow-y-auto w-full">
           {isScreenSharing ? (
             /* Screen Sharing View */
-            <div className="w-full h-full max-h-[85vh] rounded-3xl bg-slate-900 border border-slate-800 relative overflow-hidden flex flex-col">
+            <div className="w-full h-full max-h-[85vh] rounded-3xl bg-slate-900 border border-slate-800 relative overflow-hidden flex flex-col shadow-2xl">
               <div className="p-2.5 bg-slate-950/80 border-b border-slate-800 flex items-center justify-between text-xs px-4">
                 <div className="flex items-center space-x-2 text-blue-400 font-bold">
                   <MonitorUp className="h-4 w-4" />
@@ -1054,95 +1120,138 @@ const LiveMeetingRoomComponent = () => {
               </div>
             </div>
           ) : (
-            /* Multi-Participant Dynamic Video Layout */
-            <div className="w-full h-full max-w-6xl grid grid-cols-1 md:grid-cols-2 gap-4 items-center justify-center">
-              {/* TILE 1: SELF LOCAL VIDEO (YOUR CAMERA) */}
-              <div className="relative aspect-video w-full rounded-3xl bg-slate-900 border border-slate-800 overflow-hidden shadow-xl flex items-center justify-center">
-                {videoEnabled && cameraPermissionGranted ? (
-                  <video
-                    ref={localVideoRef}
-                    autoPlay
-                    playsInline
-                    muted
-                    className="w-full h-full object-cover -scale-x-100"
-                  />
-                ) : (
-                  <div className="flex flex-col items-center justify-center space-y-3">
-                    <div className="flex h-24 w-24 items-center justify-center rounded-full bg-blue-900 border-2 border-blue-500 text-white font-extrabold text-2xl shadow-lg">
-                      {displayName.substring(0, 2).toUpperCase()}
-                    </div>
-                    <p className="text-sm font-bold text-slate-300">{displayName}</p>
-                  </div>
-                )}
-                <div className="absolute bottom-4 left-4 flex items-center space-x-2 rounded-xl bg-slate-950/80 backdrop-blur-md px-3 py-1.5 text-xs font-semibold border border-slate-800">
-                  <span className={`h-2 w-2 rounded-full ${micEnabled ? 'bg-blue-400' : 'bg-rose-500'}`}></span>
-                  <span>{displayName} (You)</span>
-                  {handRaised && <span className="text-amber-400">✋</span>}
-                </div>
-                <div className="absolute top-4 right-4 rounded-lg bg-slate-950/80 p-1.5 border border-slate-800 text-slate-400">
-                  {micEnabled ? <Mic className="h-4 w-4 text-blue-400" /> : <MicOff className="h-4 w-4 text-rose-500" />}
-                </div>
-              </div>
+            /* Google Meet Multi-Participant Dynamic Grid Layout */
+            (() => {
+              const selfParticipant = {
+                id: 'self',
+                name: displayName,
+                isSelf: true,
+                isHost: isHost,
+                videoEnabled: videoEnabled && cameraPermissionGranted,
+                micEnabled: micEnabled,
+                handRaised: handRaised,
+              };
 
-              {/* TILE 2: REMOTE PARTICIPANT (PEER VIDEO FEED OR WAITING STATE) */}
-              {remoteParticipant ? (
-                <div className="relative aspect-video w-full rounded-3xl bg-slate-900 border border-slate-800 overflow-hidden shadow-xl flex items-center justify-center">
-                  {remoteVideoFrame ? (
-                    <img
-                      src={remoteVideoFrame}
-                      alt={remoteParticipant.name}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex flex-col items-center justify-center space-y-3">
-                      <div className="flex h-24 w-24 items-center justify-center rounded-full bg-indigo-900 border-2 border-indigo-500 text-white font-extrabold text-2xl shadow-lg">
-                        {remoteParticipant.name.substring(0, 2).toUpperCase()}
+              const realPeers = Object.values(peers).filter(
+                (p) => p.name.trim().toLowerCase() !== displayName.trim().toLowerCase()
+              );
+
+              const simulatedPeers = simulateCohort
+                ? COHORT_STUDENTS.filter(
+                    (c) =>
+                      !c.name.toLowerCase().includes(displayName.toLowerCase().split(' ')[0]) &&
+                      !realPeers.some((rp) => rp.name.toLowerCase().includes(c.name.toLowerCase().split(' ')[0]))
+                  )
+                : [];
+
+              const rawList = [selfParticipant, ...realPeers, ...simulatedPeers];
+              const allParticipants = pinnedPeerId
+                ? [rawList.find((p) => p.id === pinnedPeerId) || selfParticipant, ...rawList.filter((p) => p.id !== pinnedPeerId)]
+                : rawList;
+
+              const count = allParticipants.length;
+              const gridClass = pinnedPeerId
+                ? 'grid-cols-1 max-w-5xl'
+                : count === 1
+                ? 'grid-cols-1 max-w-3xl'
+                : count === 2
+                ? 'grid-cols-1 md:grid-cols-2 max-w-6xl'
+                : count <= 4
+                ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-2 max-w-5xl'
+                : 'grid-cols-2 md:grid-cols-3 max-w-7xl';
+
+              return (
+                <div className={`w-full h-full max-h-[85vh] transition-all duration-300 grid gap-3 md:gap-4 items-center justify-center ${gridClass}`}>
+                  {allParticipants.map((p) => {
+                    const theme = getAvatarTheme(p.name, p.isHost);
+                    const initials = getInitials(p.name);
+                    const isMuted = !p.micEnabled;
+                    const isCamOff = !p.videoEnabled;
+                    const isPinned = pinnedPeerId === p.id;
+
+                    return (
+                      <div
+                        key={p.id}
+                        className={`relative aspect-video w-full rounded-2xl md:rounded-3xl bg-slate-900 border border-slate-800/90 overflow-hidden shadow-2xl flex items-center justify-center transition-all duration-300 group hover:border-slate-700 ${
+                          isPinned ? 'ring-2 ring-blue-500 shadow-blue-500/30' : ''
+                        }`}
+                      >
+                        {/* Video / Camera Feed */}
+                        {p.isSelf ? (
+                          videoEnabled && cameraPermissionGranted ? (
+                            <video
+                              ref={localVideoRef}
+                              autoPlay
+                              playsInline
+                              muted
+                              className="w-full h-full object-cover -scale-x-100"
+                            />
+                          ) : (
+                            /* Google Meet Avatar Circle for Self */
+                            <div className="flex flex-col items-center justify-center space-y-3 select-none">
+                              <div className={`flex h-20 w-20 md:h-24 md:w-24 items-center justify-center rounded-full bg-gradient-to-tr ${theme.bg} border-2 ${theme.border} text-white font-black text-2xl md:text-3xl shadow-xl`}>
+                                {initials}
+                              </div>
+                              <div className="text-center">
+                                <p className="text-xs md:text-sm font-bold text-slate-200">{p.name}</p>
+                                <p className="text-[10px] text-blue-400 mt-0.5">Camera Muted • Ready</p>
+                              </div>
+                            </div>
+                          )
+                        ) : p.frame && !isCamOff ? (
+                          <img
+                            src={p.frame}
+                            alt={p.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          /* Google Meet Avatar Circle for Remote / Cohort Peer */
+                          <div className="flex flex-col items-center justify-center space-y-3 select-none">
+                            <div className={`flex h-20 w-20 md:h-24 md:w-24 items-center justify-center rounded-full bg-gradient-to-tr ${theme.bg} border-2 ${theme.border} text-white font-black text-2xl md:text-3xl shadow-xl`}>
+                              {initials}
+                            </div>
+                            <div className="text-center">
+                              <p className="text-xs md:text-sm font-bold text-slate-200">{p.name}</p>
+                              <p className="text-[10px] text-slate-400 mt-0.5">
+                                {p.isHost ? '👑 Lead Mentor' : '🎓 Student Cohort'}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Google Meet Bottom-Left Floating Name Pill */}
+                        <div className="absolute bottom-3 left-3 flex items-center space-x-2 rounded-xl bg-slate-950/80 backdrop-blur-md px-3 py-1.5 text-xs font-semibold border border-slate-800 text-white shadow-lg">
+                          <span className={`h-2 w-2 rounded-full ${p.micEnabled ? 'bg-emerald-400' : 'bg-rose-500'}`}></span>
+                          <span className="truncate max-w-[120px] md:max-w-[170px]">
+                            {p.name} {p.isSelf ? '(You)' : ''}
+                          </span>
+                          {p.isHost && (
+                            <span className="text-[9px] font-bold text-amber-300 bg-amber-500/20 px-1.5 py-0.5 rounded border border-amber-500/30">
+                              Host
+                            </span>
+                          )}
+                          {p.handRaised && <span className="text-amber-400 animate-bounce">✋</span>}
+                        </div>
+
+                        {/* Google Meet Top-Right Controls */}
+                        <div className="absolute top-3 right-3 flex items-center space-x-1.5">
+                          <button
+                            onClick={() => setPinnedPeerId(isPinned ? null : p.id)}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity rounded-full bg-slate-950/80 p-1.5 border border-slate-800 text-slate-300 hover:text-white cursor-pointer"
+                            title={isPinned ? 'Unpin' : 'Pin to screen'}
+                          >
+                            <Pin className={`h-3.5 w-3.5 ${isPinned ? 'text-blue-400 fill-blue-400' : ''}`} />
+                          </button>
+                          <div className="rounded-full bg-slate-950/80 p-1.5 border border-slate-800 text-slate-300">
+                            {p.micEnabled ? <Mic className="h-3.5 w-3.5 text-emerald-400" /> : <MicOff className="h-3.5 w-3.5 text-rose-500" />}
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-center">
-                        <p className="text-sm font-bold text-slate-200">{remoteParticipant.name}</p>
-                        <p className="text-[11px] text-blue-400 flex items-center justify-center mt-0.5">
-                          <Volume2 className="h-3.5 w-3.5 mr-1 animate-pulse" /> Active • {remoteParticipant.isHost ? 'Host (Mentor)' : 'Student'}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="absolute bottom-4 left-4 flex items-center space-x-2 rounded-xl bg-slate-950/80 backdrop-blur-md px-3 py-1.5 text-xs font-semibold border border-slate-800">
-                    <span className="h-2 w-2 rounded-full bg-blue-400"></span>
-                    <span>{remoteParticipant.name}</span>
-                  </div>
-
-                  <div className="absolute top-4 right-4 rounded-lg bg-slate-950/80 p-1.5 border border-slate-800 text-slate-400">
-                    <Mic className="h-4 w-4 text-blue-400" />
-                  </div>
+                    );
+                  })}
                 </div>
-              ) : (
-                /* In-House EduPulse Waiting State */
-                <div className="relative aspect-video w-full rounded-3xl bg-slate-900/40 border-2 border-dashed border-slate-800 flex flex-col items-center justify-center p-6 space-y-4 text-center">
-                  <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-blue-900/30 text-blue-400 border border-blue-500/30">
-                    <Users className="h-8 w-8 text-blue-400 animate-pulse" />
-                    <span className="absolute -top-1 -right-1 h-3.5 w-3.5 rounded-full bg-blue-500 animate-ping"></span>
-                  </div>
-                  <div className="text-center space-y-1">
-                    <p className="text-sm font-bold text-slate-200">
-                      {isHost ? 'Waiting for students to join...' : 'Waiting for mentor to connect...'}
-                    </p>
-                    <p className="text-[11px] text-slate-500 max-w-xs">
-                      {isHost
-                        ? 'Share this meeting link with your mentees. When they join from their device, they will appear here live with video.'
-                        : 'Your mentor or cohort peer will appear here live with video as soon as they join this meeting link.'}
-                    </p>
-                  </div>
-                  <button
-                    onClick={handleCopyLink}
-                    className="flex items-center space-x-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 px-4 py-2 text-xs text-blue-400 font-semibold transition-colors cursor-pointer"
-                  >
-                    <Copy className="h-3.5 w-3.5" />
-                    <span>{copiedLink ? 'Meeting Link Copied!' : 'Copy Invite Link'}</span>
-                  </button>
-                </div>
-              )}
-            </div>
+              );
+            })()
           )}
         </div>
 
@@ -1190,7 +1299,7 @@ const LiveMeetingRoomComponent = () => {
               />
               <button
                 type="submit"
-                className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white hover:bg-blue-500 transition-colors"
+                className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white hover:bg-blue-500 transition-colors cursor-pointer"
               >
                 <Send className="h-4 w-4" />
               </button>
@@ -1204,19 +1313,19 @@ const LiveMeetingRoomComponent = () => {
             <div className="p-4 border-b border-slate-800 flex items-center justify-between">
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center space-x-2">
                 <Users className="h-4 w-4 text-blue-400" />
-                <span>Participants ({remoteParticipant ? 2 : 1} Active)</span>
+                <span>Participants ({COHORT_STUDENTS.length})</span>
               </h3>
               <button onClick={() => setActivePanel(null)} className="text-slate-400 hover:text-white">
                 <X className="h-4 w-4" />
               </button>
             </div>
 
-            <div className="p-4 space-y-2 text-xs">
+            <div className="p-4 space-y-2 text-xs overflow-y-auto flex-1">
               {/* You */}
-              <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-800/80 border border-slate-700">
+              <div className="flex items-center justify-between p-2.5 rounded-xl bg-blue-950/40 border border-blue-800/60">
                 <div className="flex items-center space-x-2.5">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-600 text-white font-bold text-[11px]">
-                    {displayName.substring(0, 2).toUpperCase()}
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-600 text-white font-bold text-[11px] shadow-sm">
+                    {getInitials(displayName)}
                   </div>
                   <div>
                     <p className="font-bold text-white">{displayName}</p>
@@ -1224,33 +1333,39 @@ const LiveMeetingRoomComponent = () => {
                   </div>
                 </div>
                 <div className="flex items-center space-x-1.5 text-slate-400">
-                  {micEnabled ? <Mic className="h-3.5 w-3.5 text-blue-400" /> : <MicOff className="h-3.5 w-3.5 text-rose-500" />}
+                  {micEnabled ? <Mic className="h-3.5 w-3.5 text-emerald-400" /> : <MicOff className="h-3.5 w-3.5 text-rose-500" />}
                   {videoEnabled ? <Video className="h-3.5 w-3.5 text-blue-400" /> : <VideoOff className="h-3.5 w-3.5 text-rose-500" />}
                 </div>
               </div>
 
-              {/* Remote Peer */}
-              {remoteParticipant ? (
-                <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-800/80 border border-slate-700">
-                  <div className="flex items-center space-x-2.5">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-600 text-white font-bold text-[11px]">
-                      {remoteParticipant.name.substring(0, 2).toUpperCase()}
+              {/* Cohort Peers */}
+              {COHORT_STUDENTS.filter((c) => !c.name.toLowerCase().includes(displayName.toLowerCase().split(' ')[0])).map((student) => {
+                const theme = getAvatarTheme(student.name, student.isHost);
+                const realPeer = peers[student.name];
+                return (
+                  <div key={student.id} className="flex items-center justify-between p-2.5 rounded-xl bg-slate-800/80 border border-slate-700">
+                    <div className="flex items-center space-x-2.5">
+                      <div className={`flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr ${theme.bg} text-white font-bold text-[11px] shadow-sm`}>
+                        {getInitials(student.name)}
+                      </div>
+                      <div>
+                        <p className="font-bold text-white">{student.name}</p>
+                        <p className="text-[10px] text-slate-400">
+                          {realPeer ? (
+                            <span className="text-emerald-400 font-semibold">● Connected (Live)</span>
+                          ) : (
+                            student.isHost ? '👑 Lead Mentor' : '🎓 Student Cohort'
+                          )}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-bold text-white">{remoteParticipant.name}</p>
-                      <p className="text-[10px] text-emerald-400">Connected</p>
+                    <div className="flex items-center space-x-1.5 text-slate-400">
+                      {student.micEnabled ? <Mic className="h-3.5 w-3.5 text-emerald-400" /> : <MicOff className="h-3.5 w-3.5 text-rose-500" />}
+                      <Video className="h-3.5 w-3.5 text-slate-500" />
                     </div>
                   </div>
-                  <div className="flex items-center space-x-1.5 text-slate-400">
-                    <Mic className="h-3.5 w-3.5 text-blue-400" />
-                    <Video className="h-3.5 w-3.5 text-blue-400" />
-                  </div>
-                </div>
-              ) : (
-                <p className="text-center text-[11px] text-slate-500 py-4">
-                  No other participants connected yet.
-                </p>
-              )}
+                );
+              })}
             </div>
           </div>
         )}
