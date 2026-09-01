@@ -77,7 +77,8 @@ const LiveMeetingRoomComponent = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  const isHost = searchParams.get('isHost') === 'true';
+  const [isHost, setIsHost] = useState(searchParams.get('isHost') === 'true');
+  const [useGlobalWebRTC, setUseGlobalWebRTC] = useState(false);
   const meetingTopic = searchParams.get('topic') || 'Live Cohort Masterclass & Architecture Sync';
   const mentorName = searchParams.get('host') || 'Dr. Robert Langdon (Mentor)';
 
@@ -88,10 +89,10 @@ const LiveMeetingRoomComponent = () => {
       if (savedUser) {
         const parsed = JSON.parse(savedUser);
         const fullName = `${parsed.firstName || ''} ${parsed.lastName || ''}`.trim();
-        if (fullName) return isHost ? `${fullName} (Mentor)` : fullName;
+        if (fullName) return searchParams.get('isHost') === 'true' ? `${fullName} (Mentor)` : fullName;
       }
     } catch (e) {}
-    return isHost ? 'Dr. Robert Langdon (Mentor)' : 'Alex Mercer (Student)';
+    return searchParams.get('isHost') === 'true' ? 'Dr. Robert Langdon (Mentor)' : 'Alex Mercer (Student)';
   });
 
   const cleanRoomId = (roomId || 'edtech-cohort-meeting').replace(/[^a-zA-Z0-9]/g, '');
@@ -882,19 +883,40 @@ const LiveMeetingRoomComponent = () => {
           </div>
         </div>
 
-        <div className="flex items-center space-x-2.5">
-          {/* Cross-Device HD Video Bridge (Connects Laptop & Phone in real-time) */}
-          <a
-            href={`https://meet.jit.si/EduPulse-${cleanRoomId}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center space-x-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 border border-indigo-500 px-3 py-1.5 text-xs font-bold text-white shadow transition-colors cursor-pointer"
-            title="Connect Mobile & Laptop with real HD Video/Audio"
+        <div className="flex items-center space-x-2">
+          {/* Mode Switch: Studio vs Global Multi-Device */}
+          <div className="flex items-center space-x-1 rounded-xl bg-slate-800 p-1 border border-slate-700">
+            <button
+              onClick={() => setUseGlobalWebRTC(false)}
+              className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all ${
+                !useGlobalWebRTC ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              Studio
+            </button>
+            <button
+              onClick={() => setUseGlobalWebRTC(true)}
+              className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all flex items-center space-x-1.5 ${
+                useGlobalWebRTC ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Globe className="h-3.5 w-3.5" />
+              <span>Multi-Device Live</span>
+            </button>
+          </div>
+
+          {/* Toggle Role between Student and Host/Mentor */}
+          <button
+            onClick={() => {
+              const nextRole = !isHost;
+              setIsHost(nextRole);
+              setDisplayName(nextRole ? 'Dr. Robert Langdon (Mentor)' : 'Alex Mercer (Student)');
+            }}
+            className="flex items-center space-x-1 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-1.5 text-xs text-amber-300 font-bold transition-colors cursor-pointer"
+            title="Click to toggle between Student and Host/Mentor role"
           >
-            <Video className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Connect Across Devices (HD Video)</span>
-            <span className="sm:hidden">HD Video</span>
-          </a>
+            <span>{isHost ? '👑 Mentor (Host)' : '🎓 Student Mode'}</span>
+          </button>
 
           {/* Copy Meeting Link */}
           <button
@@ -925,8 +947,19 @@ const LiveMeetingRoomComponent = () => {
 
       {/* Main Video Conference Area */}
       <div className="flex-1 flex overflow-hidden relative">
-        {/* Video Tiles Grid */}
-        <div className="flex-1 p-4 flex flex-col items-center justify-center overflow-y-auto">
+        {useGlobalWebRTC ? (
+          /* Embedded Full WebRTC Live Room - Laptop & Mobile Real Video Connection */
+          <div className="flex-1 p-2 sm:p-4 flex flex-col items-center justify-center bg-slate-950 w-full h-full">
+            <iframe
+              src={`https://meet.jit.si/EduPulse-${cleanRoomId}#config.prejoinPageEnabled=false&config.disableDeepLinking=true&userInfo.displayName="${encodeURIComponent(displayName)}"`}
+              allow="camera; microphone; fullscreen; display-capture; autoplay; clipboard-write"
+              className="w-full h-full min-h-[82vh] rounded-3xl border border-slate-800 shadow-2xl bg-slate-900"
+              title="EduPulse Cross-Device Live Meeting"
+            />
+          </div>
+        ) : (
+          /* Video Tiles Grid */
+          <div className="flex-1 p-4 flex flex-col items-center justify-center overflow-y-auto">
           {isScreenSharing ? (
             /* Screen Sharing View */
             <div className="w-full h-full max-h-[85vh] rounded-3xl bg-slate-900 border border-slate-800 relative overflow-hidden flex flex-col">
@@ -1015,34 +1048,39 @@ const LiveMeetingRoomComponent = () => {
                   </div>
                 </div>
               ) : (
-                /* Waiting State when only 1 user is currently in room */
-                <div className="relative aspect-video w-full rounded-3xl bg-slate-900/40 border-2 border-dashed border-slate-800 flex flex-col items-center justify-center p-6 space-y-4">
-                  <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-blue-900/30 text-blue-400 border border-blue-500/30">
-                    <Users className="h-8 w-8" />
-                    <span className="absolute -top-1 -right-1 h-3.5 w-3.5 rounded-full bg-blue-500 animate-ping"></span>
+                /* Cross-Device Connect / Waiting Card */
+                <div className="relative aspect-video w-full rounded-3xl bg-slate-900/60 border-2 border-dashed border-indigo-500/40 flex flex-col items-center justify-center p-6 space-y-4 text-center">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-600/20 text-indigo-400 border border-indigo-500/30">
+                    <Globe className="h-7 w-7 animate-pulse text-indigo-400" />
                   </div>
-                  <div className="text-center space-y-1">
-                    <p className="text-sm font-bold text-slate-200">
-                      {isHost ? 'Waiting for students to knock...' : 'Waiting for mentor to connect...'}
-                    </p>
-                    <p className="text-[11px] text-slate-500 max-w-xs">
-                      {isHost
-                        ? 'When a student knocks, you will get an admission alert above to admit them.'
-                        : 'Your mentor will appear here live with high-definition video when connected.'}
+                  <div className="space-y-1">
+                    <p className="text-sm font-extrabold text-white">Connecting With Someone on Another PC / Mobile?</p>
+                    <p className="text-xs text-slate-400 max-w-sm">
+                      To see and talk with your peer or mentor across the internet in real-time WebRTC HD Video:
                     </p>
                   </div>
-                  <button
-                    onClick={handleCopyLink}
-                    className="flex items-center space-x-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3.5 py-1.5 text-xs text-blue-400 font-semibold transition-colors"
-                  >
-                    <Copy className="h-3.5 w-3.5" />
-                    <span>{copiedLink ? 'Meeting Link Copied!' : 'Copy Invite Link'}</span>
-                  </button>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <button
+                      onClick={() => setUseGlobalWebRTC(true)}
+                      className="flex items-center justify-center space-x-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-indigo-600/30 transition-all cursor-pointer"
+                    >
+                      <Video className="h-4 w-4" />
+                      <span>Switch to Multi-Device Live Video</span>
+                    </button>
+                    <button
+                      onClick={handleCopyLink}
+                      className="flex items-center justify-center space-x-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3.5 py-2 text-xs font-semibold text-slate-300 transition-colors cursor-pointer"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                      <span>{copiedLink ? 'Copied!' : 'Copy Invite Link'}</span>
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
           )}
         </div>
+      )}
 
         {/* Right Side Drawer: Live Meeting Chat */}
         {activePanel === 'chat' && (
