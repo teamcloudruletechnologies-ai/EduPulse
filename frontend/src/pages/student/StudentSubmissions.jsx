@@ -512,8 +512,29 @@ export const StudentSubmissions = () => {
   const lineNumbersRef = useRef(null);
   const topInputRef = useRef(null);
 
-  // Anti-cheat: block copy/paste in editor
-  const [copyPasteBlocked, setCopyPasteBlocked] = useState(true);
+  // Anti-cheat: controlled by Mentor from their portal via localStorage
+  const [copyPasteBlocked, setCopyPasteBlocked] = useState(() => {
+    const saved = localStorage.getItem('edtech_paste_locked');
+    return saved === null ? true : saved === 'true';
+  });
+
+  // Listen for mentor toggling the lock from another tab
+  useEffect(() => {
+    const handleStorage = (e) => {
+      if (e.key === 'edtech_paste_locked') {
+        const locked = e.newValue === 'true';
+        setCopyPasteBlocked(locked);
+        if (locked) {
+          showToast('🔒 Exam Mode: Copy-Paste has been locked by Mentor', 'error');
+        } else {
+          showToast('🔓 Copy-Paste has been unlocked by Mentor', 'success');
+        }
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
+
 
   const languagesList = [
     { id: 'python', name: 'Python', mode: 'INTERPRETER', ext: '.py', version: 'Python 3.12 Engine', defaultFile: 'main.py' },
@@ -1831,24 +1852,14 @@ export const StudentSubmissions = () => {
                     Lines: {lineCount} • Mode: <strong className="text-slate-700">{currentLangMeta.mode}</strong>
                   </span>
 
-                  {/* Copy-Paste Lock Toggle */}
-                  <button
-                    onClick={() => {
-                      setCopyPasteBlocked((prev) => {
-                        const next = !prev;
-                        showToast(next ? '🔒 Copy-Paste blocked — Exam Mode ON' : '🔓 Copy-Paste allowed', next ? 'error' : 'success');
-                        return next;
-                      });
-                    }}
-                    className={`flex items-center space-x-1 rounded-lg border px-2.5 py-1 text-[11px] font-bold transition-all cursor-pointer ${
-                      copyPasteBlocked
-                        ? 'bg-rose-50 border-rose-300 text-rose-700 hover:bg-rose-100'
-                        : 'bg-emerald-50 border-emerald-300 text-emerald-700 hover:bg-emerald-100'
-                    }`}
-                    title={copyPasteBlocked ? 'Click to allow copy-paste' : 'Click to block copy-paste'}
-                  >
-                    <span>{copyPasteBlocked ? '🔒 Paste Locked' : '🔓 Paste Allowed'}</span>
-                  </button>
+                  {/* Read-only paste lock status (set by Mentor) */}
+                  <span className={`inline-flex items-center rounded-lg border px-2.5 py-1 text-[11px] font-bold select-none ${
+                    copyPasteBlocked
+                      ? 'bg-rose-50 border-rose-300 text-rose-700'
+                      : 'bg-emerald-50 border-emerald-300 text-emerald-700'
+                  }`}>
+                    {copyPasteBlocked ? '🔒 Exam Mode' : '🔓 Open Mode'}
+                  </span>
                 </div>
                 <button
                   onClick={handleOpenSubmitModal}
@@ -1857,6 +1868,7 @@ export const StudentSubmissions = () => {
                   <Send className="h-3.5 w-3.5" />
                   <span>Submit to Mentor</span>
                 </button>
+
               </div>
             </div>
 

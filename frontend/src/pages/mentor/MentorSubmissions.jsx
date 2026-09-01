@@ -70,6 +70,23 @@ export const MentorSubmissions = () => {
   const [decision, setDecision] = useState('APPROVED');
   const [submitting, setSubmitting] = useState(false);
 
+  // Mentor-controlled paste lock — synced to localStorage so StudentSubmissions reads it
+  const [copyPasteBlocked, setCopyPasteBlocked] = useState(() => {
+    const saved = localStorage.getItem('edtech_paste_locked');
+    return saved === null ? true : saved === 'true';
+  });
+
+  const togglePasteLock = () => {
+    setCopyPasteBlocked((prev) => {
+      const next = !prev;
+      localStorage.setItem('edtech_paste_locked', String(next));
+      window.dispatchEvent(new StorageEvent('storage', { key: 'edtech_paste_locked', newValue: String(next) }));
+      showToast(next ? '🔒 Paste LOCKED for all students' : '🔓 Paste UNLOCKED for all students', next ? 'error' : 'success');
+      return next;
+    });
+  };
+
+
   // Sync submissions across browser tabs/portals
   const syncSubmissions = () => {
     const saved = localStorage.getItem('edtech_shared_submissions');
@@ -153,14 +170,30 @@ export const MentorSubmissions = () => {
             Inspect live code deliverables submitted from the Student Compiler, review AI pre-check scores, and record formal mentor assessments
           </p>
         </div>
-        <button
-          onClick={syncSubmissions}
-          className="flex items-center space-x-1 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-xs"
-        >
-          <RefreshCw className="h-3.5 w-3.5" />
-          <span>Refresh Queue</span>
-        </button>
+        <div className="flex items-center space-x-2">
+          {/* Paste Lock Control */}
+          <button
+            onClick={togglePasteLock}
+            className={`flex items-center space-x-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold transition-all cursor-pointer ${
+              copyPasteBlocked
+                ? 'bg-rose-50 border-rose-300 text-rose-700 hover:bg-rose-100'
+                : 'bg-emerald-50 border-emerald-300 text-emerald-700 hover:bg-emerald-100'
+            }`}
+            title="Toggle student copy-paste lock"
+          >
+            <span>{copyPasteBlocked ? '🔒 Paste Locked' : '🔓 Paste Allowed'}</span>
+          </button>
+
+          <button
+            onClick={syncSubmissions}
+            className="flex items-center space-x-1 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-xs"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            <span>Refresh Queue</span>
+          </button>
+        </div>
       </div>
+
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Deliverables Queue (Left List) */}
