@@ -10,8 +10,8 @@ export const InstitutionFaculty = () => {
   const [staffList, setStaffList] = useState([
     {
       id: 'stf-1',
-      name: 'Dr. Robert Langdon',
-      email: 'mentor@edtech.com',
+      name: 'Viji',
+      email: 'viji@edtech.com',
       role: 'Senior Industry Mentor',
       department: 'Computer Science & AI',
       status: 'Active',

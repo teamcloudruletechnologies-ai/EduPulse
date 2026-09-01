@@ -5,10 +5,12 @@ import { Users, Shield, Mail, CheckCircle2 } from 'lucide-react';
 export const AdminUsers = () => {
   const [users, setUsers] = useState([
     { id: '1', name: 'System SuperAdmin', email: 'admin@edtech.com', role: 'SUPER_ADMIN', status: 'ACTIVE' },
-    { id: '2', name: 'Eleanor Vance', email: 'institution@edtech.com', role: 'INSTITUTION_ADMIN', status: 'ACTIVE' },
-    { id: '3', name: 'Dr. Robert Langdon', email: 'mentor@edtech.com', role: 'MENTOR', status: 'ACTIVE' },
-    { id: '4', name: 'Sarah Mercer', email: 'parent@edtech.com', role: 'PARENT', status: 'ACTIVE' },
-    { id: '5', name: 'Alex Mercer', email: 'student@edtech.com', role: 'STUDENT', status: 'ACTIVE' },
+    { id: '2', name: 'Viji', email: 'viji@edtech.com', role: 'MENTOR', status: 'ACTIVE' },
+    { id: '3', name: 'Sailesh', email: 'sailesh@edtech.com', role: 'STUDENT', status: 'ACTIVE' },
+    { id: '4', name: 'Sujitha', email: 'sujitha@edtech.com', role: 'STUDENT', status: 'ACTIVE' },
+    { id: '5', name: 'Isaac', email: 'isaac@edtech.com', role: 'STUDENT', status: 'ACTIVE' },
+    { id: '6', name: 'Harrish', email: 'harrish@edtech.com', role: 'STUDENT', status: 'ACTIVE' },
+    { id: '7', name: 'Praveen', email: 'praveen@edtech.com', role: 'STUDENT', status: 'ACTIVE' },
   ]);
 
   return (

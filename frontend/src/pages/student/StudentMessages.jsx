@@ -14,9 +14,9 @@ export const StudentMessages = () => {
     return [
       {
         id: '1',
-        senderName: 'Dr. Robert Langdon',
+        senderName: 'Viji',
         role: 'MENTOR',
-        content: 'Hello Alex! I am your assigned capstone mentor. You can send me your code queries and architecture questions here anytime.',
+        content: 'Hello! I am your assigned capstone mentor. You can send me your code queries and architecture questions here anytime.',
         time: '10:00 AM',
       },
     ];
@@ -67,9 +67,9 @@ export const StudentMessages = () => {
       const reset = [
         {
           id: '1',
-          senderName: 'Dr. Robert Langdon',
+          senderName: 'Viji',
           role: 'MENTOR',
-          content: 'Hello Alex! I am your assigned capstone mentor. You can send me your code queries here anytime.',
+          content: 'Hello! I am your assigned capstone mentor. You can send me your code queries here anytime.',
           time: '10:00 AM',
         },
       ];
@@ -99,12 +99,12 @@ export const StudentMessages = () => {
         <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
           <div className="flex items-center space-x-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-900 text-white font-extrabold text-sm shadow-xs">
-              RL
+              VJ
             </div>
             <div>
-              <h3 className="text-sm font-bold text-slate-900">Dr. Robert Langdon</h3>
+              <h3 className="text-sm font-bold text-slate-900">Viji (Lead Mentor)</h3>
               <p className="text-[11px] text-emerald-600 font-semibold flex items-center">
-                <span className="h-2 w-2 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span> Online • Principal Solution Architect (Mentor)
+                <span className="h-2 w-2 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span> Online • Lead Technical Mentor & Software Specialist
               </p>
             </div>
           </div>

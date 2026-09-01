@@ -87,24 +87,28 @@ async function main() {
     });
   }
 
-  // 5. Create Mentor
+  // 5. Create Mentor: Viji
   const mentorUser = await prisma.user.upsert({
-    where: { email: 'mentor@edtech.com' },
-    update: {},
+    where: { email: 'viji@edtech.com' },
+    update: {
+      firstName: 'Viji',
+      lastName: 'Mentor',
+      role: 'MENTOR',
+    },
     create: {
-      email: 'mentor@edtech.com',
+      email: 'viji@edtech.com',
       passwordHash,
-      firstName: 'Dr. Robert',
-      lastName: 'Langdon',
-      phone: '+1-800-555-0103',
+      firstName: 'Viji',
+      lastName: 'Mentor',
+      phone: '+91-98765-43210',
       role: 'MENTOR',
       isEmailVerified: true,
       isOtpVerified: true,
       mentorProfile: {
         create: {
           expertise: 'Full-Stack React/Node, FastAPI, Distributed Systems',
-          bio: 'Senior Principal Solution Architect with 12+ years of industry experience.',
-          availability: 'Mon-Fri 4PM-7PM EST',
+          bio: 'Lead Technical Mentor and Software Specialist at EduPulse.',
+          availability: 'Mon-Sat 10AM-7PM IST',
         },
       },
     },

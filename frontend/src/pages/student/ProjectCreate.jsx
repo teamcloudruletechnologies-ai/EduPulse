@@ -166,7 +166,7 @@ export const ProjectCreate = () => {
               className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs"
             >
               <option value="">Select Domain Expert Mentor...</option>
-              <option value="Dr. Robert Langdon">Dr. Robert Langdon (Full-Stack & AI Systems)</option>
+              <option value="Viji">Viji (Full-Stack & Cloud Architecture)</option>
               <option value="Prof. Alan Turing">Prof. Alan Turing (Data Science & Algorithms)</option>
             </select>
           </div>

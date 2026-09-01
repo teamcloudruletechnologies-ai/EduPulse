@@ -14,7 +14,7 @@ export const StudentNotifications = () => {
     {
       id: '2',
       title: 'Mentor Session Confirmed',
-      message: 'Dr. Robert Langdon accepted your 1-on-1 mentorship request for tomorrow at 4:00 PM.',
+      message: 'Viji accepted your 1-on-1 mentorship request for tomorrow at 4:00 PM.',
       time: '2 hours ago',
       type: 'MENTOR',
       read: false,

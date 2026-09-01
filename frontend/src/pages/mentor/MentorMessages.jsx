@@ -14,9 +14,9 @@ export const MentorMessages = () => {
     return [
       {
         id: '1',
-        senderName: 'Dr. Robert Langdon',
+        senderName: 'Viji',
         role: 'MENTOR',
-        content: 'Hello Alex! I am your assigned capstone mentor. You can send me your code queries here anytime.',
+        content: 'Hello! I am your assigned capstone mentor. You can send me your code queries here anytime.',
         time: '10:00 AM',
       },
     ];
@@ -49,7 +49,7 @@ export const MentorMessages = () => {
 
     const myMsg = {
       id: String(Date.now()),
-      senderName: user?.firstName ? `Dr. ${user.firstName} ${user.lastName}` : 'Dr. Robert Langdon',
+      senderName: user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'Viji',
       role: 'MENTOR',
       content: input,
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),

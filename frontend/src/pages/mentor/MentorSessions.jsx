@@ -89,7 +89,7 @@ export const MentorSessions = () => {
       id: 'sess-pub-' + Date.now(),
       roomId: roomId,
       audience: 'Assigned Mentees (Cohort 2026)',
-      mentorName: 'Dr. Robert Langdon',
+      mentorName: 'Viji',
       topic: formData.topic,
       scheduledAt: new Date(formData.datetime).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }),
       duration: `${formData.duration} mins`,
@@ -108,7 +108,7 @@ export const MentorSessions = () => {
         topic: formData.topic,
         scheduledAt: formData.datetime,
         duration: formData.duration,
-        mentorName: 'Dr. Robert Langdon',
+        mentorName: 'Viji',
       }).catch((e) => console.warn('Cloud sync error:', e.message));
     } catch (e) {}
 
@@ -139,7 +139,7 @@ export const MentorSessions = () => {
   const handleHostInDedicatedTab = (session) => {
     const roomId = session.roomId || session.id || 'EdTechOpenCohort';
     const url = `/meeting/${roomId}?isHost=true&topic=${encodeURIComponent(session.topic)}&host=${encodeURIComponent(
-      session.mentorName || 'Dr. Robert Langdon'
+      session.mentorName || 'Viji'
     )}`;
     window.open(url, '_blank');
     showToast(`Launching "${session.topic}" in dedicated Live Meeting!`, 'info');

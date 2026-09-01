@@ -85,7 +85,7 @@ export const StudentDashboard = () => {
   const handleJoinMeeting = (sess) => {
     const roomId = sess.roomId || sess.id || 'EdTechCohortMeeting';
     const url = `/meeting/${roomId}?topic=${encodeURIComponent(sess.topic)}&host=${encodeURIComponent(
-      sess.mentorName || 'Dr. Robert Langdon'
+      sess.mentorName || 'Viji'
     )}`;
     window.open(url, '_blank');
   };
@@ -175,7 +175,7 @@ export const StudentDashboard = () => {
 
                   <h3 className="text-sm font-bold text-slate-900 leading-snug">{sess.topic}</h3>
                   <p className="text-xs text-slate-500">
-                    Host: <strong className="text-slate-700">{sess.mentorName || 'Dr. Robert Langdon'}</strong> • Audience: {sess.audience || 'Assigned Mentees'}
+                    Host: <strong className="text-slate-700">{sess.mentorName || 'Viji'}</strong> • Audience: {sess.audience || 'Assigned Mentees'}
                   </p>
                 </div>
 
@@ -291,7 +291,7 @@ export const StudentDashboard = () => {
                 <p className="text-xs text-slate-600 line-clamp-2">{proj.description}</p>
                 <div className="flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-100">
                   <span>Tech: {proj.techStack}</span>
-                  <span>Mentor: {proj.mentor?.user?.firstName ? `Dr. ${proj.mentor.user.firstName} ${proj.mentor.user.lastName}` : 'Dr. Robert Langdon'}</span>
+                  <span>Mentor: {proj.mentor?.user?.firstName ? `${proj.mentor.user.firstName} ${proj.mentor.user.lastName || ''}`.trim() : 'Viji'}</span>
                 </div>
               </div>
             ))

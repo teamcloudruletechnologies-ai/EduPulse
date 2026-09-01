@@ -80,19 +80,19 @@ const LiveMeetingRoomComponent = () => {
 
   const [isHost, setIsHost] = useState(searchParams.get('isHost') === 'true');
   const meetingTopic = searchParams.get('topic') || 'Live Cohort Masterclass & Architecture Sync';
-  const mentorName = searchParams.get('host') || 'Dr. Robert Langdon (Mentor)';
+  const mentorName = searchParams.get('host') || 'Viji (Mentor)';
 
   // Current User Display Name
   const [displayName, setDisplayName] = useState(() => {
     try {
-      const savedUser = localStorage.getItem('edtech_user');
+      const savedUser = localStorage.getItem('edtech_user') || localStorage.getItem('user');
       if (savedUser) {
         const parsed = JSON.parse(savedUser);
         const fullName = `${parsed.firstName || ''} ${parsed.lastName || ''}`.trim();
         if (fullName) return searchParams.get('isHost') === 'true' ? `${fullName} (Mentor)` : fullName;
       }
     } catch (e) {}
-    return searchParams.get('isHost') === 'true' ? 'Dr. Robert Langdon (Mentor)' : 'Alex Mercer (Student)';
+    return searchParams.get('isHost') === 'true' ? 'Viji (Mentor)' : 'Sailesh (Student)';
   });
 
   const cleanRoomId = (roomId || 'edtech-cohort-meeting').replace(/[^a-zA-Z0-9]/g, '');
@@ -990,12 +990,12 @@ const LiveMeetingRoomComponent = () => {
             onClick={() => {
               const nextRole = !isHost;
               setIsHost(nextRole);
-              setDisplayName(nextRole ? 'Dr. Robert Langdon (Mentor)' : 'Alex Mercer (Student)');
+              setDisplayName(nextRole ? 'Viji (Mentor)' : 'Sailesh (Student)');
             }}
             className="flex items-center space-x-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-1.5 text-xs text-amber-300 font-bold transition-colors cursor-pointer"
             title="Click to toggle between Student and Host/Mentor role"
           >
-            <span>{isHost ? '👑 Mentor (Host)' : '🎓 Student Mode'}</span>
+            <span>{isHost ? '👑 Mentor (Host: Viji)' : '🎓 Student Mode (Sailesh)'}</span>
           </button>
 
           {/* Copy Meeting Link */}

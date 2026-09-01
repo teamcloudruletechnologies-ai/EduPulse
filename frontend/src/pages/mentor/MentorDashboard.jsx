@@ -23,7 +23,7 @@ export const MentorDashboard = () => {
               👨‍🏫 Senior Industry Mentor Workspace
             </span>
             <h1 className="mt-2 text-2xl font-extrabold tracking-tight">
-              Welcome back, Dr. Robert Langdon!
+              Welcome back, Viji!
             </h1>
             <p className="mt-1 text-xs text-purple-100">
               Senior Solution Architect • Full-Stack Cloud & AI Systems Specialist

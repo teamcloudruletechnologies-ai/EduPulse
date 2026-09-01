@@ -19,13 +19,13 @@ const DEFAULT_COHORT_SESSION = {
   id: 'cohort-live-2026',
   roomId: 'EduPulseGlobalCohort',
   topic: 'Full Stack Architecture & Capstone Mentorship Sync',
-  mentorName: 'Dr. Robert Langdon (Lead Mentor)',
+  mentorName: 'Viji (Lead Mentor)',
   mentorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
   scheduledAt: 'Live Now (Active Session)',
   duration: 60,
   participants: 24,
   status: 'LIVE_NOW',
-  meetingUrl: '/meeting/EduPulseGlobalCohort?topic=Full%20Stack%20Architecture%20%26%20Capstone%20Mentorship%20Sync&host=Dr.%20Robert%20Langdon',
+  meetingUrl: '/meeting/EduPulseGlobalCohort?topic=Full%20Stack%20Architecture%20%26%20Capstone%20Mentorship%20Sync&host=Viji%20(Lead%20Mentor)',
   notes: 'Interactive mentor cohort workshop covering microservices architecture, cloud deployment, and code reviews.',
 };
 
@@ -88,7 +88,7 @@ export const StudentMeetings = () => {
   const handleJoinInDedicatedTab = (session) => {
     const roomId = session.roomId || session.id || 'EdTechOpenCohort';
     const url = `/meeting/${roomId}?topic=${encodeURIComponent(session.topic)}&host=${encodeURIComponent(
-      session.mentorName || 'Dr. Robert Langdon'
+      session.mentorName || 'Viji'
     )}`;
     window.open(url, '_blank');
     showToast(`Joining "${session.topic}"!`, 'info');
@@ -150,7 +150,7 @@ export const StudentMeetings = () => {
                   <div>
                     <h3 className="text-base font-bold text-slate-900 leading-snug">{sess.topic}</h3>
                     <p className="text-xs text-slate-500 mt-1">
-                      Host: <strong>{sess.mentorName || 'Dr. Robert Langdon'}</strong> (Mentor)
+                      Host: <strong>{sess.mentorName || 'Viji'}</strong> (Mentor)
                     </p>
                     <p className="text-xs text-slate-500 mt-0.5 flex items-center space-x-1">
                       <Users className="h-3.5 w-3.5 text-blue-600 inline" />
