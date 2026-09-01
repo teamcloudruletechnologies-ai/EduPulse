@@ -665,7 +665,7 @@ Complete reference manual for all **47 REST APIs** in the EduPulse Node.js + Exp
 {
   "projectId": "805f34cf-877a-4ab4-b5c5-49ea4b103352",
   "title": "Setup In-Website WebRTC Video Container",
-  "description": "Integrate Jitsi Meet inside iframe without external redirects.",
+  "description": "EduPulse In-House Native Real-Time Meeting Room with Custom Cloud Signaling.",
   "priority": "HIGH"
 }
 ```
