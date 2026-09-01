@@ -13,25 +13,49 @@ import {
   Radio,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { api } from '../../services/api';
+
+const DEFAULT_COHORT_SESSION = {
+  id: 'cohort-live-2026',
+  roomId: 'EduPulseGlobalCohort',
+  topic: 'Full Stack Architecture & Capstone Mentorship Sync',
+  mentorName: 'Dr. Robert Langdon (Lead Mentor)',
+  mentorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+  scheduledAt: 'Live Now (Active Session)',
+  duration: 60,
+  participants: 24,
+  status: 'LIVE_NOW',
+  meetingUrl: '/meeting/EduPulseGlobalCohort?topic=Full%20Stack%20Architecture%20%26%20Capstone%20Mentorship%20Sync&host=Dr.%20Robert%20Langdon',
+  notes: 'Interactive mentor cohort workshop covering microservices architecture, cloud deployment, and code reviews.',
+};
 
 export const StudentMeetings = () => {
   const { showToast } = useToast();
-  const [sessions, setSessions] = useState([]);
+  const [sessions, setSessions] = useState([DEFAULT_COHORT_SESSION]);
 
-  const loadSessions = () => {
+  const loadSessions = async () => {
+    try {
+      const res = await api.get('/mentors/sessions');
+      if (res.data?.success && Array.isArray(res.data.data) && res.data.data.length > 0) {
+        setSessions([DEFAULT_COHORT_SESSION, ...res.data.data]);
+        localStorage.setItem('edtech_shared_sessions', JSON.stringify(res.data.data));
+        return;
+      }
+    } catch (e) {
+      // Cloud API fallback
+    }
+
     const saved = localStorage.getItem('edtech_shared_sessions');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          // Remove static mock session
-          const realSessions = parsed.filter((s) => s.id !== 'sess-pub-1');
-          setSessions(realSessions);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setSessions([DEFAULT_COHORT_SESSION, ...parsed]);
           return;
         }
       } catch (e) {}
     }
-    setSessions([]);
+    setSessions([DEFAULT_COHORT_SESSION]);
   };
 
   useEffect(() => {

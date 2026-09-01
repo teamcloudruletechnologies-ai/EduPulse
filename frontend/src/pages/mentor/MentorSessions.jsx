@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useToast } from '../../context/ToastContext';
+import { api } from '../../services/api';
 import {
   Video,
   Calendar,
@@ -24,13 +25,21 @@ export const MentorSessions = () => {
     duration: 45,
   });
 
-  const loadSessions = () => {
+  const loadSessions = async () => {
+    try {
+      const res = await api.get('/mentors/sessions');
+      if (res.data?.success && Array.isArray(res.data.data) && res.data.data.length > 0) {
+        setSessions(res.data.data);
+        localStorage.setItem('edtech_shared_sessions', JSON.stringify(res.data.data));
+        return;
+      }
+    } catch (e) {}
+
     const saved = localStorage.getItem('edtech_shared_sessions');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) {
-          // Remove static mock session
           const realSessions = parsed.filter((s) => s.id !== 'sess-pub-1');
           setSessions(realSessions);
           return;
@@ -94,7 +103,16 @@ export const MentorSessions = () => {
     window.dispatchEvent(new Event('storage'));
     window.dispatchEvent(new CustomEvent('edtech_shared_sessions_updated'));
 
-    showToast('🌐 Meeting scheduled for your assigned mentees!', 'success');
+    try {
+      api.post('/mentors/sessions', {
+        topic: formData.topic,
+        scheduledAt: formData.datetime,
+        duration: formData.duration,
+        mentorName: 'Dr. Robert Langdon',
+      }).catch((e) => console.warn('Cloud sync error:', e.message));
+    } catch (e) {}
+
+    showToast('🌐 Meeting scheduled for your assigned mentees across all devices!', 'success');
     setFormData({
       topic: '',
       datetime: '',
@@ -109,6 +127,11 @@ export const MentorSessions = () => {
       localStorage.setItem('edtech_shared_sessions', JSON.stringify(updated));
       window.dispatchEvent(new Event('storage'));
       window.dispatchEvent(new CustomEvent('edtech_shared_sessions_updated'));
+
+      try {
+        api.delete(`/mentors/sessions/${id}`).catch(() => {});
+      } catch (e) {}
+
       showToast('Meeting cancelled.', 'info');
     }
   };

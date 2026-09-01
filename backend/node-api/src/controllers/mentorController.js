@@ -91,8 +91,112 @@ const addMentorFeedback = async (req, res, next) => {
   }
 };
 
+const getSessions = async (req, res, next) => {
+  try {
+    const sessions = await prisma.mentorSession.findMany({
+      include: {
+        mentor: {
+          include: {
+            user: {
+              select: { id: true, firstName: true, lastName: true, email: true, avatarUrl: true },
+            },
+          },
+        },
+      },
+      orderBy: { scheduledAt: 'desc' },
+    });
+
+    const formatted = sessions.map((s) => ({
+      id: s.id,
+      roomId: s.id,
+      topic: s.topic,
+      mentorName: s.mentor?.user ? `${s.mentor.user.firstName} ${s.mentor.user.lastName}` : 'Dr. Robert Langdon',
+      mentorAvatar: s.mentor?.user?.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+      scheduledAt: s.scheduledAt ? s.scheduledAt.toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16),
+      duration: s.duration || 45,
+      participants: 18,
+      status: s.status || 'SCHEDULED',
+      meetingUrl: s.meetingUrl || `/meeting/${s.id}?topic=${encodeURIComponent(s.topic)}`,
+      notes: s.notes || 'Cohort Live Workshop',
+    }));
+
+    return res.json({ success: true, data: formatted });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const createSession = async (req, res, next) => {
+  try {
+    const { topic, scheduledAt, duration, notes, mentorName } = req.body;
+
+    let mentor = await prisma.mentor.findFirst();
+    if (!mentor) {
+      const firstUser = await prisma.user.findFirst({ where: { role: 'MENTOR' } });
+      if (firstUser) {
+        mentor = await prisma.mentor.create({ data: { userId: firstUser.id, expertise: 'Full Stack Development' } });
+      }
+    }
+    let student = await prisma.student.findFirst();
+    if (!student) {
+      const stuUser = await prisma.user.findFirst({ where: { role: 'STUDENT' } });
+      if (stuUser) {
+        student = await prisma.student.create({ data: { userId: stuUser.id, rollNumber: 'CS2026-001' } });
+      }
+    }
+
+    if (!mentor || !student) {
+      return res.status(400).json({ success: false, message: 'Mentor or Student not found in database.' });
+    }
+
+    const session = await prisma.mentorSession.create({
+      data: {
+        mentorId: mentor.id,
+        studentId: student.id,
+        topic: topic || 'Cohort Live Sync',
+        scheduledAt: scheduledAt ? new Date(scheduledAt) : new Date(),
+        duration: duration ? parseInt(duration, 10) : 45,
+        status: 'SCHEDULED',
+        notes: notes || 'Live Cohort Meeting',
+      },
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: 'Session created successfully in cloud database.',
+      data: {
+        id: session.id,
+        roomId: session.id,
+        topic: session.topic,
+        mentorName: mentorName || 'Dr. Robert Langdon',
+        scheduledAt: session.scheduledAt.toISOString().slice(0, 16),
+        duration: session.duration,
+        status: session.status,
+        meetingUrl: `/meeting/${session.id}?topic=${encodeURIComponent(session.topic)}`,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const deleteSession = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    await prisma.mentorSession.delete({
+      where: { id },
+    });
+    return res.json({ success: true, message: 'Session deleted' });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getMentors,
   bookMentorSession,
   addMentorFeedback,
+  getSessions,
+  createSession,
+  deleteSession,
 };

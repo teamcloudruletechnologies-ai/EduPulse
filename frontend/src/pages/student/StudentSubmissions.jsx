@@ -573,10 +573,12 @@ export const StudentSubmissions = () => {
   const extractAllInputPrompts = (code, lang) => {
     const prompts = [];
     if (lang === 'python') {
-      const regex = /input\s*\(\s*(['"])(.*?)\1\s*\)/g;
+      const regex = /input\s*\((?:(['"])(.*?)\1)?\s*\)/g;
       let match;
+      let count = 0;
       while ((match = regex.exec(code)) !== null) {
-        prompts.push(match[2] || 'Input: ');
+        count++;
+        prompts.push(match[2] || `Input #${count}: `);
       }
     } else if (lang === 'c' || lang === 'cpp') {
       const regex = /(?:printf|cout\s*<<)\s*(?:["'])(.*?)(?:["'])/g;
@@ -672,6 +674,15 @@ export const StudentSubmissions = () => {
       line = line.replace(/\bTrue\b/g, 'true').replace(/\bFalse\b/g, 'false').replace(/\bNone\b/g, 'null');
       line = line.replace(/\band\b/g, '&&').replace(/\bor\b/g, '||').replace(/\bnot\b/g, '!');
 
+      // Python Array / List Operations & Inputs
+      line = line.replace(/\.append\s*\(/g, '.push(');
+      line = line.replace(/list\s*\(\s*map\s*\(\s*int\s*,\s*input\s*\(.*?\)\.split\s*\(\s*\)\s*\)\s*\)/g, '__readIntArray()');
+      line = line.replace(/list\s*\(\s*map\s*\(\s*float\s*,\s*input\s*\(.*?\)\.split\s*\(\s*\)\s*\)\s*\)/g, '__readFloatArray()');
+      line = line.replace(/list\s*\(\s*map\s*\(\s*str\s*,\s*input\s*\(.*?\)\.split\s*\(\s*\)\s*\)\s*\)/g, '__readStrArray()');
+      line = line.replace(/\[\s*int\s*\(\s*([a-zA-Z_]\w*)\s*\)\s+for\s+\1\s+in\s+input\s*\(.*?\)\.split\s*\(\s*\)\s*\]/g, '__readIntArray()');
+      line = line.replace(/\[\s*float\s*\(\s*([a-zA-Z_]\w*)\s*\)\s+for\s+\1\s+in\s+input\s*\(.*?\)\.split\s*\(\s*\)\s*\]/g, '__readFloatArray()');
+      line = line.replace(/input\s*\(.*?\)\.split\s*\(\s*\)/g, '__readStrArray()');
+
       // Interactive inputs
       line = line.replace(/int\s*\(\s*input\s*\(.*?\)\s*\)/g, '__readInt()');
       line = line.replace(/float\s*\(\s*input\s*\(.*?\)\s*\)/g, '__readFloat()');
@@ -733,6 +744,18 @@ export const StudentSubmissions = () => {
         }
       }
 
+      // For in iterable / array (e.g. for num in arr:)
+      if (line.startsWith('for ') && line.includes(' in ') && !line.includes(' in range(') && line.endsWith(':')) {
+        const match = line.match(/for\s+([a-zA-Z_]\w*)\s+in\s+(.*?)\s*:/);
+        if (match) {
+          const v = match[1];
+          const iter = match[2];
+          jsLines.push(`for (var ${v} of (${iter} || [])) { if (++__guard > 100000) break;`);
+          indentStack.push(currentIndent + 2);
+          continue;
+        }
+      }
+
       // Function definition
       if (line.startsWith('def ') && line.endsWith(':')) {
         const head = line.slice(4, -1).trim();
@@ -757,15 +780,65 @@ export const StudentSubmissions = () => {
     return jsLines.join('\n');
   };
 
-  // 1. Python Engine (Runs with true if/else branching, while loops, and variable scopes)
+  // 1. Python Engine (Runs with true if/else branching, while loops, arrays, and variable scopes)
   const runPythonInterpreter = (code, inputsArray) => {
     const logs = [];
     let inIdx = 0;
     let __guard = 0;
 
-    const __readInt = () => parseInt(inputsArray[inIdx++] || '0', 10);
-    const __readFloat = () => parseFloat(inputsArray[inIdx++] || '0');
-    const __readStr = () => String(inputsArray[inIdx++] || '');
+    const __readInt = () => {
+      const val = inputsArray[inIdx++];
+      return val !== undefined ? parseInt(val, 10) : 0;
+    };
+    const __readFloat = () => {
+      const val = inputsArray[inIdx++];
+      return val !== undefined ? parseFloat(val) : 0;
+    };
+    const __readStr = () => {
+      const val = inputsArray[inIdx++];
+      return val !== undefined ? String(val) : '';
+    };
+
+    // Array / List batch input readers
+    const __readIntArray = () => {
+      const remaining = inputsArray.slice(inIdx);
+      if (remaining.length > 0) {
+        inIdx = inputsArray.length;
+        return remaining.flatMap((item) => String(item).split(/[\s,]+/)).filter(Boolean).map(Number);
+      }
+      return [10, 20, 30, 40, 50];
+    };
+    const __readFloatArray = () => {
+      const remaining = inputsArray.slice(inIdx);
+      if (remaining.length > 0) {
+        inIdx = inputsArray.length;
+        return remaining.flatMap((item) => String(item).split(/[\s,]+/)).filter(Boolean).map(parseFloat);
+      }
+      return [1.5, 2.5, 3.5];
+    };
+    const __readStrArray = () => {
+      const remaining = inputsArray.slice(inIdx);
+      if (remaining.length > 0) {
+        inIdx = inputsArray.length;
+        return remaining.flatMap((item) => String(item).split(/[\s,]+/)).filter(Boolean);
+      }
+      return ['apple', 'banana', 'cherry'];
+    };
+
+    // Python Built-ins Polyfills
+    const len = (x) => (x && typeof x.length === 'number' ? x.length : 0);
+    const sum = (arr) => (Array.isArray(arr) ? arr.reduce((a, b) => a + Number(b), 0) : 0);
+    const max = (...args) => {
+      const flat = args.length === 1 && Array.isArray(args[0]) ? args[0] : args;
+      return Math.max(...flat.map(Number));
+    };
+    const min = (...args) => {
+      const flat = args.length === 1 && Array.isArray(args[0]) ? args[0] : args;
+      return Math.min(...flat.map(Number));
+    };
+    const sorted = (arr) => [...(arr || [])].sort((a, b) => a - b);
+    const list = (x) => (Array.isArray(x) ? x : Array.from(x || []));
+
     const __print = (...args) =>
       logs.push(
         args
@@ -779,11 +852,35 @@ export const StudentSubmissions = () => {
         '__readInt',
         '__readFloat',
         '__readStr',
+        '__readIntArray',
+        '__readFloatArray',
+        '__readStrArray',
+        'len',
+        'sum',
+        'max',
+        'min',
+        'sorted',
+        'list',
         '__print',
         '__guard',
         transpiledJs
       );
-      runner(__readInt, __readFloat, __readStr, __print, __guard);
+      runner(
+        __readInt,
+        __readFloat,
+        __readStr,
+        __readIntArray,
+        __readFloatArray,
+        __readStrArray,
+        len,
+        sum,
+        max,
+        min,
+        sorted,
+        list,
+        __print,
+        __guard
+      );
       return logs;
     } catch (err) {
       return [`Runtime Error: ${err.message}`];
@@ -1746,7 +1843,7 @@ export const StudentSubmissions = () => {
               {/* Interactive Top Input Bar (When sequential input prompt is active) */}
               {isWaitingForInput && (
                 <div className="bg-amber-50 border-b border-amber-200 p-2.5 flex items-center space-x-2 animate-slide-down">
-                  <span className="rounded bg-amber-500 text-slate-950 font-extrabold px-1.5 py-0.5 text-[10px]">
+                  <span className="rounded bg-amber-500 text-slate-950 font-extrabold px-1.5 py-0.5 text-[10px] whitespace-nowrap">
                     Input {currentPromptIndex + 1}/{allPromptsList.length}
                   </span>
                   <form onSubmit={handleSendTopInput} className="flex-1 flex space-x-2">
@@ -1755,13 +1852,13 @@ export const StudentSubmissions = () => {
                       type="text"
                       value={interactiveInputVal}
                       onChange={(e) => setInteractiveInputVal(e.target.value)}
-                      placeholder={`Enter: ${allPromptsList[currentPromptIndex] || 'value'} and press Enter`}
-                      className="flex-1 rounded-lg border border-amber-300 bg-white px-3 py-1 text-xs text-slate-900 font-mono focus:border-amber-500 focus:outline-none ring-0 shadow-inner"
+                      placeholder={`${allPromptsList[currentPromptIndex] || 'Enter value'} (💡 For arrays / multiple inputs, enter values separated by spaces: e.g. 10 20 30)`}
+                      className="flex-1 rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs text-slate-900 font-mono focus:border-amber-500 focus:outline-none ring-0 shadow-inner"
                       autoFocus
                     />
                     <button
                       type="submit"
-                      className="flex items-center space-x-1 rounded-lg bg-amber-500 px-3 py-1 text-xs font-bold text-slate-950 shadow-xs hover:bg-amber-400 cursor-pointer"
+                      className="flex items-center space-x-1 rounded-lg bg-amber-500 px-3.5 py-1.5 text-xs font-bold text-slate-950 shadow-xs hover:bg-amber-400 cursor-pointer"
                     >
                       <span>Send</span>
                       <CornerDownLeft className="h-3 w-3" />

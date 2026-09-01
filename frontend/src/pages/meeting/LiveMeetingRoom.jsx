@@ -401,24 +401,15 @@ const LiveMeetingRoomComponent = () => {
 
   // Handle "Join Meeting Now" button in Pre-join Lobby
   const handleJoinAttempt = () => {
-    if (isHost) {
-      setHasJoined(true);
-      sendBroadcast({
-        type: 'USER_IN_CALL',
-        sender: displayName,
-        isHost: true,
-        videoEnabled,
-        micEnabled,
-      });
-    } else {
-      setIsWaitingForAdmission(true);
-      setAdmissionDenied(false);
-      sendBroadcast({
-        type: 'KNOCK_REQUEST',
-        studentName: displayName,
-        roomId: cleanRoomId,
-      });
-    }
+    setHasJoined(true);
+    setIsWaitingForAdmission(false);
+    sendBroadcast({
+      type: 'USER_IN_CALL',
+      sender: displayName,
+      isHost,
+      videoEnabled,
+      micEnabled,
+    });
   };
 
   // Host Admits a Student
@@ -813,7 +804,7 @@ const LiveMeetingRoomComponent = () => {
                   className="w-full flex items-center justify-center space-x-2 rounded-2xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 py-3.5 text-sm font-extrabold text-white shadow-lg shadow-blue-600/30 transition-all cursor-pointer"
                 >
                   <Radio className="h-4 w-4 animate-pulse" />
-                  <span>{isHost ? 'Start Meeting as Host ➔' : 'Knock & Join Meeting ➔'}</span>
+                  <span>{isHost ? 'Start Meeting as Host ➔' : 'Join Live Video Meeting ➔'}</span>
                 </button>
               </div>
 
@@ -872,11 +863,11 @@ const LiveMeetingRoomComponent = () => {
         </div>
       )}
 
-      {/* Top Floating Control Header */}
-      <div className="flex items-center justify-between px-6 py-3 bg-slate-900 border-b border-slate-800 shadow-lg z-30">
+      {/* Top Header Bar */}
+      <div className="h-14 border-b border-slate-800 bg-slate-900/90 px-4 flex items-center justify-between shrink-0 z-10 backdrop-blur">
         <div className="flex items-center space-x-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white shadow-md shadow-blue-500/20">
-            <Radio className="h-5 w-5 animate-pulse" />
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white shadow">
+            <Radio className="h-5 w-5" />
           </div>
           <div>
             <div className="flex items-center space-x-2">
@@ -891,7 +882,20 @@ const LiveMeetingRoomComponent = () => {
           </div>
         </div>
 
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-2.5">
+          {/* Cross-Device HD Video Bridge (Connects Laptop & Phone in real-time) */}
+          <a
+            href={`https://meet.jit.si/EduPulse-${cleanRoomId}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center space-x-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 border border-indigo-500 px-3 py-1.5 text-xs font-bold text-white shadow transition-colors cursor-pointer"
+            title="Connect Mobile & Laptop with real HD Video/Audio"
+          >
+            <Video className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Connect Across Devices (HD Video)</span>
+            <span className="sm:hidden">HD Video</span>
+          </a>
+
           {/* Copy Meeting Link */}
           <button
             onClick={handleCopyLink}
