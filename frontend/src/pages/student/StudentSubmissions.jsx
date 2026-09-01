@@ -512,27 +512,34 @@ export const StudentSubmissions = () => {
   const lineNumbersRef = useRef(null);
   const topInputRef = useRef(null);
 
-  // Anti-cheat: controlled by Mentor from their portal via localStorage
-  const [copyPasteBlocked, setCopyPasteBlocked] = useState(() => {
-    const saved = localStorage.getItem('edtech_paste_locked');
-    return saved === null ? true : saved === 'true';
-  });
+  // Anti-cheat: polls the server every 4s to get mentor's lock state (cross-device real-time)
+  const [copyPasteBlocked, setCopyPasteBlocked] = useState(true);
+  const prevLockRef = useRef(null);
 
-  // Listen for mentor toggling the lock from another tab
   useEffect(() => {
-    const handleStorage = (e) => {
-      if (e.key === 'edtech_paste_locked') {
-        const locked = e.newValue === 'true';
-        setCopyPasteBlocked(locked);
-        if (locked) {
-          showToast('🔒 Exam Mode: Copy-Paste has been locked by Mentor', 'error');
-        } else {
-          showToast('🔓 Copy-Paste has been unlocked by Mentor', 'success');
-        }
-      }
+    let interval;
+
+    const fetchLockState = () => {
+      api.get('/settings/paste-lock')
+        .then((res) => {
+          const locked = res.data.locked;
+          if (prevLockRef.current !== null && prevLockRef.current !== locked) {
+            // State changed — notify student
+            if (locked) {
+              showToast('🔒 Exam Mode: Copy-Paste locked by Mentor', 'error');
+            } else {
+              showToast('🔓 Open Mode: Copy-Paste unlocked by Mentor', 'success');
+            }
+          }
+          prevLockRef.current = locked;
+          setCopyPasteBlocked(locked);
+        })
+        .catch(() => {});
     };
-    window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
+
+    fetchLockState(); // immediate on mount
+    interval = setInterval(fetchLockState, 4000); // poll every 4s
+    return () => clearInterval(interval);
   }, []);
 
 

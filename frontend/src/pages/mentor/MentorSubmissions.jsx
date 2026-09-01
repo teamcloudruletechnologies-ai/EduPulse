@@ -70,22 +70,26 @@ export const MentorSubmissions = () => {
   const [decision, setDecision] = useState('APPROVED');
   const [submitting, setSubmitting] = useState(false);
 
-  // Mentor-controlled paste lock — synced to localStorage so StudentSubmissions reads it
-  const [copyPasteBlocked, setCopyPasteBlocked] = useState(() => {
-    const saved = localStorage.getItem('edtech_paste_locked');
-    return saved === null ? true : saved === 'true';
-  });
+  // Mentor-controlled paste lock — synced via real API (cross-device)
+  const [copyPasteBlocked, setCopyPasteBlocked] = useState(true);
 
-  const togglePasteLock = () => {
-    setCopyPasteBlocked((prev) => {
-      const next = !prev;
-      localStorage.setItem('edtech_paste_locked', String(next));
-      window.dispatchEvent(new StorageEvent('storage', { key: 'edtech_paste_locked', newValue: String(next) }));
+  // Fetch current lock state from server on mount
+  useEffect(() => {
+    api.get('/settings/paste-lock')
+      .then((res) => setCopyPasteBlocked(res.data.locked))
+      .catch(() => {});
+  }, []);
+
+  const togglePasteLock = async () => {
+    const next = !copyPasteBlocked;
+    try {
+      await api.put('/settings/paste-lock', { locked: next, updatedBy: 'viji' });
+      setCopyPasteBlocked(next);
       showToast(next ? '🔒 Paste LOCKED for all students' : '🔓 Paste UNLOCKED for all students', next ? 'error' : 'success');
-      return next;
-    });
+    } catch (err) {
+      showToast('Failed to update paste lock: ' + err.message, 'error');
+    }
   };
-
 
   // Sync submissions across browser tabs/portals
   const syncSubmissions = () => {

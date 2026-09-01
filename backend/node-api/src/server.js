@@ -119,6 +119,26 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// ─── Paste Lock (Anti-Cheat) API ─────────────────────────────────────────────
+// Mentor calls PUT to lock/unlock. Students poll GET every 4 seconds.
+let pasteLockState = { locked: true, updatedAt: Date.now(), updatedBy: 'system' };
+
+app.get('/api/settings/paste-lock', (req, res) => {
+  res.json({ success: true, ...pasteLockState });
+});
+
+app.put('/api/settings/paste-lock', (req, res) => {
+  const { locked, updatedBy } = req.body;
+  if (typeof locked !== 'boolean') {
+    return res.status(400).json({ error: '"locked" must be a boolean' });
+  }
+  pasteLockState = { locked, updatedAt: Date.now(), updatedBy: updatedBy || 'mentor' };
+  return res.json({ success: true, ...pasteLockState });
+});
+// ─────────────────────────────────────────────────────────────────────────────
+
+
+
 // Error handling middleware
 app.use(errorHandler);
 
