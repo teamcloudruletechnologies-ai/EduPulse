@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, Component } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
+import { api } from '../../services/api';
 import {
   Mic,
   MicOff,
@@ -78,7 +79,6 @@ const LiveMeetingRoomComponent = () => {
   const navigate = useNavigate();
 
   const [isHost, setIsHost] = useState(searchParams.get('isHost') === 'true');
-  const [useGlobalWebRTC, setUseGlobalWebRTC] = useState(false);
   const meetingTopic = searchParams.get('topic') || 'Live Cohort Masterclass & Architecture Sync';
   const mentorName = searchParams.get('host') || 'Dr. Robert Langdon (Mentor)';
 
@@ -363,7 +363,7 @@ const LiveMeetingRoomComponent = () => {
     };
   }, [hasJoined, displayName, isHost, cleanRoomId]);
 
-  // 3. Real-Time Video Frame Streaming Loop across tabs
+  // 3. Real-Time Video Frame Streaming Loop (Broadcast to local tabs + Cloud Internet Sync)
   useEffect(() => {
     if (!hasJoined || !videoEnabled || !localVideoRef.current) return;
 
@@ -371,34 +371,128 @@ const LiveMeetingRoomComponent = () => {
     const canvas = frameCanvasRef.current || document.createElement('canvas');
     frameCanvasRef.current = canvas;
     const ctx = canvas.getContext('2d');
+    let lastCloudSend = 0;
 
     const streamInterval = setInterval(() => {
       const video = localVideoRef.current;
       if (video && video.videoWidth > 0 && video.videoHeight > 0 && videoEnabled) {
-        canvas.width = 480;
-        canvas.height = 270;
+        canvas.width = 360;
+        canvas.height = 202;
         ctx.save();
         ctx.scale(-1, 1);
-        ctx.drawImage(video, -480, 0, 480, 270);
+        ctx.drawImage(video, -360, 0, 360, 202);
         ctx.restore();
 
         try {
-          const frameData = canvas.toDataURL('image/jpeg', 0.55);
+          const frameData = canvas.toDataURL('image/jpeg', 0.45);
+          // Broadcast to local tabs on same device
           sendBroadcast({
             type: 'VIDEO_FRAME',
             sender: displayName,
             isHost,
             frame: frameData,
           });
+
+          // Also broadcast over cloud backend to other devices (every 180ms ~ 5.5 FPS)
+          const now = Date.now();
+          if (now - lastCloudSend > 180) {
+            lastCloudSend = now;
+            api.post('/meetings/signal', {
+              roomId: cleanRoomId,
+              sender: displayName,
+              type: 'VIDEO_FRAME',
+              payload: { frame: frameData, isHost, videoEnabled, micEnabled },
+            }).catch(() => {});
+          }
         } catch (e) {}
       }
-    }, 66); // ~15 FPS smooth video stream across tabs
+    }, 66);
 
     return () => {
       clearInterval(streamInterval);
       if (animId) cancelAnimationFrame(animId);
     };
-  }, [hasJoined, videoEnabled, displayName, isHost]);
+  }, [hasJoined, videoEnabled, displayName, isHost, cleanRoomId]);
+
+  // 4. Cloud Internet Signaling & Peer Sync Loop across all devices
+  useEffect(() => {
+    if (!hasJoined) return;
+
+    let lastSince = Date.now() - 5000;
+    let isCancelled = false;
+
+    // Send heartbeat presence to cloud
+    const sendPresence = () => {
+      api.post('/meetings/signal', {
+        roomId: cleanRoomId,
+        sender: displayName,
+        type: 'USER_IN_CALL',
+        payload: { isHost, videoEnabled, micEnabled },
+      }).catch(() => {});
+    };
+
+    sendPresence();
+    const presenceTimer = setInterval(sendPresence, 2500);
+
+    // Poll incoming signals from other devices
+    const pollSignals = async () => {
+      if (isCancelled) return;
+      try {
+        const res = await api.get(`/meetings/signals/${cleanRoomId}?since=${lastSince}&sender=${encodeURIComponent(displayName)}`);
+        if (res.data?.success && Array.isArray(res.data.signals)) {
+          res.data.signals.forEach((sig) => {
+            if (sig.timestamp > lastSince) lastSince = sig.timestamp;
+            if (sig.sender === displayName) return;
+
+            if (sig.type === 'USER_IN_CALL' || sig.type === 'HEARTBEAT') {
+              setRemoteParticipant({
+                name: sig.sender,
+                isHost: sig.payload?.isHost || false,
+                videoEnabled: sig.payload?.videoEnabled ?? true,
+                micEnabled: sig.payload?.micEnabled ?? true,
+              });
+            }
+
+            if (sig.type === 'VIDEO_FRAME' && sig.payload?.frame) {
+              setRemoteVideoFrame(sig.payload.frame);
+              setRemoteParticipant((prev) => prev || {
+                name: sig.sender,
+                isHost: sig.payload?.isHost || false,
+                videoEnabled: true,
+                micEnabled: true,
+              });
+            }
+
+            if (sig.type === 'CHAT_MESSAGE' && sig.payload?.message) {
+              setChatMessages((prev) => {
+                if (prev.some((m) => m.id === sig.payload.message.id)) return prev;
+                return [...prev, sig.payload.message];
+              });
+            }
+
+            if (sig.type === 'USER_LEFT') {
+              setRemoteParticipant(null);
+              setRemoteVideoFrame(null);
+            }
+          });
+        }
+      } catch (e) {}
+    };
+
+    const pollTimer = setInterval(pollSignals, 150);
+
+    return () => {
+      isCancelled = true;
+      clearInterval(presenceTimer);
+      clearInterval(pollTimer);
+      api.post('/meetings/signal', {
+        roomId: cleanRoomId,
+        sender: displayName,
+        type: 'USER_LEFT',
+        payload: { isHost },
+      }).catch(() => {});
+    };
+  }, [hasJoined, cleanRoomId, displayName, isHost, videoEnabled, micEnabled]);
 
   // Handle "Join Meeting Now" button in Pre-join Lobby
   const handleJoinAttempt = () => {
@@ -519,6 +613,13 @@ const LiveMeetingRoomComponent = () => {
       type: 'CHAT_MESSAGE',
       message: messageObj,
     });
+
+    api.post('/meetings/signal', {
+      roomId: cleanRoomId,
+      sender: displayName,
+      type: 'CHAT_MESSAGE',
+      payload: { message: messageObj },
+    }).catch(() => {});
 
     setNewMessage('');
   };
@@ -884,27 +985,6 @@ const LiveMeetingRoomComponent = () => {
         </div>
 
         <div className="flex items-center space-x-2">
-          {/* Mode Switch: Studio vs Global Multi-Device */}
-          <div className="flex items-center space-x-1 rounded-xl bg-slate-800 p-1 border border-slate-700">
-            <button
-              onClick={() => setUseGlobalWebRTC(false)}
-              className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all ${
-                !useGlobalWebRTC ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Studio
-            </button>
-            <button
-              onClick={() => setUseGlobalWebRTC(true)}
-              className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all flex items-center space-x-1.5 ${
-                useGlobalWebRTC ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <Globe className="h-3.5 w-3.5" />
-              <span>Multi-Device Live</span>
-            </button>
-          </div>
-
           {/* Toggle Role between Student and Host/Mentor */}
           <button
             onClick={() => {
@@ -912,7 +992,7 @@ const LiveMeetingRoomComponent = () => {
               setIsHost(nextRole);
               setDisplayName(nextRole ? 'Dr. Robert Langdon (Mentor)' : 'Alex Mercer (Student)');
             }}
-            className="flex items-center space-x-1 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-1.5 text-xs text-amber-300 font-bold transition-colors cursor-pointer"
+            className="flex items-center space-x-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-1.5 text-xs text-amber-300 font-bold transition-colors cursor-pointer"
             title="Click to toggle between Student and Host/Mentor role"
           >
             <span>{isHost ? '👑 Mentor (Host)' : '🎓 Student Mode'}</span>
@@ -947,19 +1027,8 @@ const LiveMeetingRoomComponent = () => {
 
       {/* Main Video Conference Area */}
       <div className="flex-1 flex overflow-hidden relative">
-        {useGlobalWebRTC ? (
-          /* Embedded Full WebRTC Live Room - Laptop & Mobile Real Video Connection */
-          <div className="flex-1 p-2 sm:p-4 flex flex-col items-center justify-center bg-slate-950 w-full h-full">
-            <iframe
-              src={`https://meet.jit.si/EduPulse-${cleanRoomId}#config.prejoinPageEnabled=false&config.disableDeepLinking=true&userInfo.displayName="${encodeURIComponent(displayName)}"`}
-              allow="camera; microphone; fullscreen; display-capture; autoplay; clipboard-write"
-              className="w-full h-full min-h-[82vh] rounded-3xl border border-slate-800 shadow-2xl bg-slate-900"
-              title="EduPulse Cross-Device Live Meeting"
-            />
-          </div>
-        ) : (
-          /* Video Tiles Grid */
-          <div className="flex-1 p-4 flex flex-col items-center justify-center overflow-y-auto">
+        {/* Video Tiles Grid */}
+        <div className="flex-1 p-4 flex flex-col items-center justify-center overflow-y-auto">
           {isScreenSharing ? (
             /* Screen Sharing View */
             <div className="w-full h-full max-h-[85vh] rounded-3xl bg-slate-900 border border-slate-800 relative overflow-hidden flex flex-col">
@@ -1048,39 +1117,34 @@ const LiveMeetingRoomComponent = () => {
                   </div>
                 </div>
               ) : (
-                /* Cross-Device Connect / Waiting Card */
-                <div className="relative aspect-video w-full rounded-3xl bg-slate-900/60 border-2 border-dashed border-indigo-500/40 flex flex-col items-center justify-center p-6 space-y-4 text-center">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-600/20 text-indigo-400 border border-indigo-500/30">
-                    <Globe className="h-7 w-7 animate-pulse text-indigo-400" />
+                /* In-House EduPulse Waiting State */
+                <div className="relative aspect-video w-full rounded-3xl bg-slate-900/40 border-2 border-dashed border-slate-800 flex flex-col items-center justify-center p-6 space-y-4 text-center">
+                  <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-blue-900/30 text-blue-400 border border-blue-500/30">
+                    <Users className="h-8 w-8 text-blue-400 animate-pulse" />
+                    <span className="absolute -top-1 -right-1 h-3.5 w-3.5 rounded-full bg-blue-500 animate-ping"></span>
                   </div>
-                  <div className="space-y-1">
-                    <p className="text-sm font-extrabold text-white">Connecting With Someone on Another PC / Mobile?</p>
-                    <p className="text-xs text-slate-400 max-w-sm">
-                      To see and talk with your peer or mentor across the internet in real-time WebRTC HD Video:
+                  <div className="text-center space-y-1">
+                    <p className="text-sm font-bold text-slate-200">
+                      {isHost ? 'Waiting for students to join...' : 'Waiting for mentor to connect...'}
+                    </p>
+                    <p className="text-[11px] text-slate-500 max-w-xs">
+                      {isHost
+                        ? 'Share this meeting link with your mentees. When they join from their device, they will appear here live with video.'
+                        : 'Your mentor or cohort peer will appear here live with video as soon as they join this meeting link.'}
                     </p>
                   </div>
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <button
-                      onClick={() => setUseGlobalWebRTC(true)}
-                      className="flex items-center justify-center space-x-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-indigo-600/30 transition-all cursor-pointer"
-                    >
-                      <Video className="h-4 w-4" />
-                      <span>Switch to Multi-Device Live Video</span>
-                    </button>
-                    <button
-                      onClick={handleCopyLink}
-                      className="flex items-center justify-center space-x-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3.5 py-2 text-xs font-semibold text-slate-300 transition-colors cursor-pointer"
-                    >
-                      <Copy className="h-3.5 w-3.5" />
-                      <span>{copiedLink ? 'Copied!' : 'Copy Invite Link'}</span>
-                    </button>
-                  </div>
+                  <button
+                    onClick={handleCopyLink}
+                    className="flex items-center space-x-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 px-4 py-2 text-xs text-blue-400 font-semibold transition-colors cursor-pointer"
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                    <span>{copiedLink ? 'Meeting Link Copied!' : 'Copy Invite Link'}</span>
+                  </button>
                 </div>
               )}
             </div>
           )}
         </div>
-      )}
 
         {/* Right Side Drawer: Live Meeting Chat */}
         {activePanel === 'chat' && (

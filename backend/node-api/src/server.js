@@ -48,6 +48,68 @@ if (notificationRoutes) app.use('/api/notifications', notificationRoutes);
 if (analyticsRoutes) app.use('/api/analytics', analyticsRoutes);
 if (messageRoutes) app.use('/api/messages', messageRoutes);
 
+// In-Memory WebRTC Signaling Store for EduPulse Native Meeting Rooms
+const meetingSignals = new Map();
+
+app.post('/api/meetings/signal', (req, res) => {
+  try {
+    const { roomId, sender, type, payload } = req.body;
+    if (!roomId) return res.status(400).json({ error: 'roomId required' });
+
+    if (!meetingSignals.has(roomId)) {
+      meetingSignals.set(roomId, { participants: new Set(), signals: [] });
+    }
+
+    const room = meetingSignals.get(roomId);
+    if (sender) room.participants.add(sender);
+
+    const signalMsg = {
+      id: Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+      sender,
+      type,
+      payload,
+      timestamp: Date.now(),
+    };
+
+    room.signals.push(signalMsg);
+
+    // Keep last 150 signals to keep memory tiny
+    if (room.signals.length > 150) {
+      room.signals = room.signals.slice(-150);
+    }
+
+    return res.json({ success: true, timestamp: signalMsg.timestamp });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/meetings/signals/:roomId', (req, res) => {
+  try {
+    const { roomId } = req.params;
+    const since = parseInt(req.query.since || '0', 10);
+    const sender = req.query.sender || '';
+
+    if (!meetingSignals.has(roomId)) {
+      return res.json({ success: true, signals: [], participants: [] });
+    }
+
+    const room = meetingSignals.get(roomId);
+    const newSignals = room.signals.filter(
+      (s) => s.timestamp > since && (!sender || s.sender !== sender)
+    );
+
+    return res.json({
+      success: true,
+      signals: newSignals,
+      participants: Array.from(room.participants),
+      serverTime: Date.now(),
+    });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({
