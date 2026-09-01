@@ -1577,34 +1577,6 @@ export const StudentSubmissions = () => {
     setSubmitting(true);
 
     try {
-      let trace = null;
-      try {
-        const response = await fetch('/api/submissions/explain-code', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            code: codeContent,
-            language: currentLangMeta.name.toLowerCase(),
-            inputs: collectedInputs,
-          }),
-        });
-        if (response.ok) {
-          const resJson = await response.json();
-          if (resJson.success && resJson.data) {
-            trace = {
-              mainBlockVariables: resJson.data.main_block_variables,
-              explanations: resJson.data.explanations,
-            };
-          }
-        }
-      } catch (apiErr) {
-        console.warn('Backend python explanation failed, using local fallback:', apiErr);
-      }
-
-      if (!trace) {
-        trace = generateCodeExplanation(codeContent, currentLangMeta.name, collectedInputs);
-      }
-
       const newSub = {
         id: 'sub-' + Date.now(),
         title: submitForm.title || `${currentLangMeta.name} Solution (${currentLangMeta.defaultFile})`,
@@ -1617,13 +1589,6 @@ export const StudentSubmissions = () => {
           rollNumber: 'CS2026-042',
           user: { firstName: 'Alex', lastName: 'Mercer', email: 'student@edtech.com' },
         },
-        executionTrace: trace,
-        aiAnalysis: {
-          completeness_score: 96,
-          code_quality_grade: 'A+',
-          ai_recommendation: 'EXCELLENT',
-          mentor_action_suggested: 'Python microservice AST analysis verified. Main block variables and execution logic validated.',
-        },
       };
 
       const updated = [newSub, ...submissions];
@@ -1631,13 +1596,14 @@ export const StudentSubmissions = () => {
       localStorage.setItem('edtech_shared_submissions', JSON.stringify(updated));
       window.dispatchEvent(new Event('storage'));
 
-      showToast('🚀 Deliverable submitted! Python AST explanation generated.', 'success');
+      showToast('🚀 Deliverable submitted to Mentor!', 'success');
       setIsSubmitModalOpen(false);
       setActiveTab('history');
       setSearchParams({ tab: 'history' });
     } catch (err) {
       showToast('Error submitting deliverable: ' + err.message, 'error');
     } finally {
+
       setSubmitting(false);
     }
   };
@@ -2114,21 +2080,8 @@ export const StudentSubmissions = () => {
                     </div>
                   )}
 
-                  {/* 4. AI Evaluation Feedback */}
-                  {sub.aiAnalysis && (
-                    <div className="rounded-xl bg-blue-50/70 border border-blue-100 p-3 text-xs flex items-start space-x-2.5 text-blue-900">
-                      <Sparkles className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
-                      <div>
-                        <p className="font-bold">
-                          AI Code Evaluation: Grade {sub.aiAnalysis.code_quality_grade} (Score: {sub.aiAnalysis.completeness_score}%)
-                        </p>
-                        <p className="text-blue-800 text-[11px] mt-0.5 leading-relaxed">
-                          {sub.aiAnalysis.mentor_action_suggested}
-                        </p>
-                      </div>
-                    </div>
-                  )}
                 </div>
+
               );
             })}
           </div>

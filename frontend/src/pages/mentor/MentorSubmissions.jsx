@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { api } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import { StatusBadge } from '../../components/common/StatusBadge';
-import { Send, Code2, Brain, CheckCircle2, Star, Clock, Check, RefreshCw } from 'lucide-react';
+import { Send, Code2, CheckCircle2, Star, Clock, Check, RefreshCw } from 'lucide-react';
+
 
 const DEFAULT_SUBMISSIONS = [
   {
@@ -20,12 +21,6 @@ const DEFAULT_SUBMISSIONS = [
       rollNumber: 'CS2026-042',
       user: { firstName: 'Alex', lastName: 'Mercer', email: 'student@edtech.com' },
     },
-    aiAnalysis: {
-      completeness_score: 95,
-      code_quality_grade: 'A+',
-      ai_recommendation: 'EXCELLENT',
-      mentor_action_suggested: 'Compiled cleanly in sandbox. Syntax and AST valid. Ready for approval.',
-    },
   },
   {
     id: 'sub-102',
@@ -40,12 +35,6 @@ JOIN projects p ON p.creatorId = s.id WHERE p.status = 'ACTIVE';`,
     student: {
       rollNumber: 'CS2026-042',
       user: { firstName: 'Alex', lastName: 'Mercer', email: 'student@edtech.com' },
-    },
-    aiAnalysis: {
-      completeness_score: 92,
-      code_quality_grade: 'A',
-      ai_recommendation: 'VERIFIED',
-      mentor_action_suggested: 'Foreign keys and indexes verified. 0 syntax warnings.',
     },
   },
 ];
@@ -232,15 +221,8 @@ export const MentorSubmissions = () => {
                   By: {sub.student?.user?.firstName || 'Alex'} {sub.student?.user?.lastName || 'Mercer'} ({sub.student?.rollNumber || 'CS2026-042'})
                 </p>
 
-                {sub.aiAnalysis && (
-                  <div className="mt-2.5 flex items-center justify-between text-[11px] font-bold text-purple-900 bg-purple-50 rounded-lg px-2.5 py-1 border border-purple-100">
-                    <span className="flex items-center">
-                      <Brain className="h-3.5 w-3.5 mr-1 text-purple-700" />
-                      AI Score: {sub.aiAnalysis.completeness_score || 95}%
-                    </span>
-                    <span>Grade {sub.aiAnalysis.code_quality_grade || 'A+'}</span>
-                  </div>
-                )}
+
+
               </div>
             ))}
           </div>
@@ -283,23 +265,6 @@ export const MentorSubmissions = () => {
                 <p className="text-slate-600 leading-relaxed">{selectedSub.description}</p>
               </div>
 
-              {/* Automated AI Pre-Check Card */}
-              {selectedSub.aiAnalysis && (
-                <div className="rounded-2xl border border-purple-200 bg-purple-50/70 p-4 text-xs space-y-2 text-purple-950">
-                  <div className="flex items-center justify-between font-bold">
-                    <div className="flex items-center space-x-2">
-                      <Brain className="h-4 w-4 text-purple-700" />
-                      <span>Python FastAPI Automated AI Code Quality Analysis</span>
-                    </div>
-                    <span className="rounded-md bg-purple-200 px-2.5 py-0.5 text-[10px] font-extrabold text-purple-900">
-                      Grade {selectedSub.aiAnalysis.code_quality_grade || 'A+'} • {selectedSub.aiAnalysis.completeness_score || 95}% Completeness
-                    </span>
-                  </div>
-                  <p className="text-purple-900 leading-relaxed text-[11px]">
-                    {selectedSub.aiAnalysis.mentor_action_suggested || 'Code syntax parsed cleanly. No infinite loops or security vulnerabilities detected. Recommended for formal sign-off.'}
-                  </p>
-                </div>
-              )}
 
               {/* Formal Mentor Evaluation Form */}
               <form onSubmit={handleReview} className="space-y-3.5 pt-3 border-t border-slate-100 text-xs">
