@@ -512,6 +512,9 @@ export const StudentSubmissions = () => {
   const lineNumbersRef = useRef(null);
   const topInputRef = useRef(null);
 
+  // Anti-cheat: block copy/paste in editor
+  const [copyPasteBlocked, setCopyPasteBlocked] = useState(true);
+
   const languagesList = [
     { id: 'python', name: 'Python', mode: 'INTERPRETER', ext: '.py', version: 'Python 3.12 Engine', defaultFile: 'main.py' },
     { id: 'java', name: 'Java', mode: 'COMPILER', ext: '.java', version: 'OpenJDK 21 / Javac', defaultFile: 'Main.java' },
@@ -1795,6 +1798,24 @@ export const StudentSubmissions = () => {
                       setCodeContent(e.target.value);
                       if (syntaxError) setSyntaxError(null);
                     }}
+                    onPaste={(e) => {
+                      if (copyPasteBlocked) {
+                        e.preventDefault();
+                        showToast('❌ Paste is blocked — type your code yourself!', 'error');
+                      }
+                    }}
+                    onCopy={(e) => {
+                      if (copyPasteBlocked) {
+                        e.preventDefault();
+                        showToast('❌ Copy is blocked in exam mode!', 'error');
+                      }
+                    }}
+                    onCut={(e) => {
+                      if (copyPasteBlocked) {
+                        e.preventDefault();
+                        showToast('❌ Cut is blocked in exam mode!', 'error');
+                      }
+                    }}
                     onScroll={handleScroll}
                     spellCheck={false}
                     className="flex-1 p-3.5 font-mono text-xs text-slate-900 bg-white border-0 focus:outline-none focus:ring-0 leading-6 resize-none min-h-[500px] whitespace-pre"
@@ -1805,9 +1826,30 @@ export const StudentSubmissions = () => {
 
               {/* Editor Footer */}
               <div className="flex items-center justify-between border-t border-slate-200 bg-slate-50 px-4 py-2">
-                <span className="text-[11px] text-slate-500 font-medium">
-                  Lines: {lineCount} • Mode: <strong className="text-slate-700">{currentLangMeta.mode}</strong>
-                </span>
+                <div className="flex items-center space-x-3">
+                  <span className="text-[11px] text-slate-500 font-medium">
+                    Lines: {lineCount} • Mode: <strong className="text-slate-700">{currentLangMeta.mode}</strong>
+                  </span>
+
+                  {/* Copy-Paste Lock Toggle */}
+                  <button
+                    onClick={() => {
+                      setCopyPasteBlocked((prev) => {
+                        const next = !prev;
+                        showToast(next ? '🔒 Copy-Paste blocked — Exam Mode ON' : '🔓 Copy-Paste allowed', next ? 'error' : 'success');
+                        return next;
+                      });
+                    }}
+                    className={`flex items-center space-x-1 rounded-lg border px-2.5 py-1 text-[11px] font-bold transition-all cursor-pointer ${
+                      copyPasteBlocked
+                        ? 'bg-rose-50 border-rose-300 text-rose-700 hover:bg-rose-100'
+                        : 'bg-emerald-50 border-emerald-300 text-emerald-700 hover:bg-emerald-100'
+                    }`}
+                    title={copyPasteBlocked ? 'Click to allow copy-paste' : 'Click to block copy-paste'}
+                  >
+                    <span>{copyPasteBlocked ? '🔒 Paste Locked' : '🔓 Paste Allowed'}</span>
+                  </button>
+                </div>
                 <button
                   onClick={handleOpenSubmitModal}
                   className="flex items-center space-x-1.5 rounded-xl bg-blue-600 px-4 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-blue-500 transition-colors cursor-pointer"
