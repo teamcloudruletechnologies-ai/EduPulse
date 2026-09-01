@@ -1,0 +1,20 @@
+{
+  "name": "edtech-platform-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Multi-Portal EdTech Learning, Project Management & Mentorship Enterprise Platform",
+  "scripts": {
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:node": "cd backend/node-api && npm run dev",
+    "dev:python": "cd backend/python-service && uvicorn main:app --reload --port 8000",
+    "prisma:generate": "cd database/prisma && npx prisma generate",
+    "prisma:push": "cd database/prisma && npx prisma db push",
+    "prisma:seed": "cd backend/node-api && npm run prisma:seed"
+  },
+  "devDependencies": {
+    "prisma": "^5.22.0"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0"
+  }
+}

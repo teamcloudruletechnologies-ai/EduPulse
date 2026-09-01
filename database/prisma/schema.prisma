@@ -1,0 +1,623 @@
+// Prisma Schema for EdTech Learning & Project Management Platform
+// Database: MySQL
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../backend/node-api/node_modules/.prisma/client"
+}
+
+enum RoleType {
+  STUDENT
+  PARENT
+  INSTITUTION_ADMIN
+  COORDINATOR
+  FACULTY
+  MENTOR
+  SUPER_ADMIN
+}
+
+enum InstitutionStatus {
+  PENDING_VERIFICATION
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+enum ProjectStatus {
+  DRAFT
+  PENDING_REVIEW
+  ACTIVE
+  REVISION_REQUIRED
+  COMPLETED
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  SUBMITTED
+  REVISION_REQUIRED
+  COMPLETED
+}
+
+enum SubmissionStatus {
+  DRAFT
+  PENDING_REVIEW
+  ANALYZING
+  REVISION_REQUIRED
+  APPROVED
+}
+
+enum MentorSessionStatus {
+  REQUESTED
+  ACCEPTED
+  DECLINED
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+}
+
+enum NotificationType {
+  IN_APP
+  EMAIL
+  PUSH
+}
+
+model User {
+  id               String       @id @default(uuid())
+  email            String       @unique
+  passwordHash     String
+  firstName        String
+  lastName         String
+  phone            String?
+  avatarUrl        String?
+  role             RoleType
+  isEmailVerified  Boolean      @default(false)
+  isOtpVerified    Boolean      @default(false)
+  otpCode          String?
+  otpExpiresAt     DateTime?
+  resetToken       String?
+  resetExpiresAt   DateTime?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  studentProfile     Student?
+  parentProfile      Parent?
+  institutionAdmin   InstitutionAdmin?
+  facultyProfile     Faculty?
+  coordinatorProfile Coordinator?
+  mentorProfile      Mentor?
+  auditLogs          AuditLog[]
+  sentMessages       Message[]        @relation("SentMessages")
+  receivedMessages   Message[]        @relation("ReceivedMessages")
+  notifications      Notification[]
+
+  @@map("users")
+}
+
+model Role {
+  id          String       @id @default(uuid())
+  name        RoleType     @unique
+  description String?      @db.Text
+  permissions Permission[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String   @id @default(uuid())
+  action      String
+  resource    String
+  description String?  @db.Text
+  roles       Role[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("permissions")
+}
+
+model Institution {
+  id          String            @id @default(uuid())
+  name        String
+  code        String            @unique
+  type        String            // "SCHOOL" or "COLLEGE"
+  email       String
+  phone       String
+  address     String            @db.Text
+  website     String?
+  status      InstitutionStatus @default(PENDING_VERIFICATION)
+  documentUrl String?           @db.Text
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  admins        InstitutionAdmin[]
+  students      Student[]
+  faculty       Faculty[]
+  coordinators  Coordinator[]
+  programs      Program[]
+  batches       Batch[]
+  announcements Announcement[]
+
+  @@map("institutions")
+}
+
+model InstitutionAdmin {
+  id            String      @id @default(uuid())
+  userId        String      @unique
+  institutionId String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  institution   Institution @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+  createdAt     DateTime    @default(now())
+
+  @@map("institution_admins")
+}
+
+model Program {
+  id            String      @id @default(uuid())
+  name          String
+  code          String
+  description   String?     @db.Text
+  institutionId String
+  institution   Institution @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+  batches       Batch[]
+  courses       Course[]
+  students      Student[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@map("programs")
+}
+
+model Batch {
+  id            String      @id @default(uuid())
+  name          String
+  programId     String
+  institutionId String
+  program       Program     @relation(fields: [programId], references: [id], onDelete: Cascade)
+  institution   Institution @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+  students      Student[]
+  createdAt     DateTime    @default(now())
+
+  @@map("batches")
+}
+
+model Student {
+  id            String      @id @default(uuid())
+  userId        String      @unique
+  institutionId String
+  programId     String?
+  batchId       String?
+  rollNumber    String?
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  institution   Institution @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+  program       Program?    @relation(fields: [programId], references: [id])
+  batch         Batch?      @relation(fields: [batchId], references: [id])
+
+  parents             ParentStudentLink[]
+  projects            Project[]            @relation("StudentProjects")
+  projectMemberships  ProjectMember[]
+  learningProgress    LearningProgress[]
+  quizAttempts        QuizAttempt[]
+  taskProgress        TaskProgress[]
+  submissions         Submission[]
+  mentorSessions      MentorSession[]
+  achievements        StudentAchievement[]
+  certificates        Certificate[]
+  attendances         Attendance[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("students")
+}
+
+model Parent {
+  id        String              @id @default(uuid())
+  userId    String              @unique
+  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  children  ParentStudentLink[]
+  createdAt DateTime            @default(now())
+
+  @@map("parents")
+}
+
+model ParentStudentLink {
+  id         String   @id @default(uuid())
+  parentId   String
+  studentId  String
+  relation   String
+  isVerified Boolean  @default(true)
+  parent     Parent   @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  student    Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@unique([parentId, studentId])
+  @@map("parent_student_links")
+}
+
+model Faculty {
+  id            String      @id @default(uuid())
+  userId        String      @unique
+  institutionId String
+  department    String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  institution   Institution @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+  courses       Course[]
+  createdAt     DateTime    @default(now())
+
+  @@map("faculty")
+}
+
+model Coordinator {
+  id            String      @id @default(uuid())
+  userId        String      @unique
+  institutionId String
+  department    String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  institution   Institution @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+  createdAt     DateTime    @default(now())
+
+  @@map("coordinators")
+}
+
+model Mentor {
+  id           String           @id @default(uuid())
+  userId       String           @unique
+  expertise    String
+  bio          String?          @db.Text
+  availability String?
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projects     Project[]
+  sessions     MentorSession[]
+  feedbacks    MentorFeedback[]
+  createdAt    DateTime         @default(now())
+
+  @@map("mentors")
+}
+
+model Course {
+  id          String   @id @default(uuid())
+  title       String
+  code        String   @unique
+  description String   @db.Text
+  category    String
+  imageUrl    String?  @db.Text
+  programId   String?
+  facultyId   String?
+  program     Program? @relation(fields: [programId], references: [id])
+  faculty     Faculty? @relation(fields: [facultyId], references: [id])
+
+  modules          Module[]
+  learningProgress LearningProgress[]
+  certificates     Certificate[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("courses")
+}
+
+model Module {
+  id         String   @id @default(uuid())
+  title      String
+  orderIndex Int
+  courseId   String
+  course     Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons    Lesson[]
+  quizzes    Quiz[]
+  createdAt  DateTime @default(now())
+
+  @@map("modules")
+}
+
+model Lesson {
+  id         String   @id @default(uuid())
+  title      String
+  content    String   @db.LongText
+  videoUrl   String?  @db.Text
+  duration   Int
+  orderIndex Int
+  moduleId   String
+  module     Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@map("lessons")
+}
+
+model Quiz {
+  id         String         @id @default(uuid())
+  title      String
+  totalMarks Int            @default(100)
+  passMarks  Int            @default(60)
+  moduleId   String
+  module     Module         @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  questions  QuizQuestion[]
+  attempts   QuizAttempt[]
+  createdAt  DateTime       @default(now())
+
+  @@map("quizzes")
+}
+
+model QuizQuestion {
+  id            String @id @default(uuid())
+  quizId        String
+  questionText  String @db.Text
+  options       String @db.Text
+  correctAnswer String
+  marks         Int    @default(10)
+  quiz          Quiz   @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  @@map("quiz_questions")
+}
+
+model QuizAttempt {
+  id        String   @id @default(uuid())
+  quizId    String
+  studentId String
+  score     Int
+  passed    Boolean
+  answers   String   @db.Text
+  quiz      Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@map("quiz_attempts")
+}
+
+model LearningProgress {
+  id          String   @id @default(uuid())
+  studentId   String
+  courseId    String
+  progressPct Float    @default(0.0)
+  completed   Boolean  @default(false)
+  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  updatedAt   DateTime @updatedAt
+
+  @@unique([studentId, courseId])
+  @@map("learning_progress")
+}
+
+model Project {
+  id               String        @id @default(uuid())
+  title            String
+  description      String        @db.Text
+  problemStatement String        @db.Text
+  objectives       String        @db.Text
+  techStack        String
+  creatorId        String
+  mentorId         String?
+  status           ProjectStatus @default(DRAFT)
+  creator          Student       @relation("StudentProjects", fields: [creatorId], references: [id], onDelete: Cascade)
+  mentor           Mentor?       @relation(fields: [mentorId], references: [id])
+
+  members      ProjectMember[]
+  tasks        ProjectTask[]
+  submissions  Submission[]
+  feedbacks    MentorFeedback[]
+  certificates Certificate[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("projects")
+}
+
+model ProjectMember {
+  id        String   @id @default(uuid())
+  projectId String
+  studentId String
+  role      String   @default("MEMBER")
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([projectId, studentId])
+  @@map("project_members")
+}
+
+model ProjectTask {
+  id          String         @id @default(uuid())
+  projectId   String
+  title       String
+  description String         @db.Text
+  priority    String         @default("MEDIUM")
+  deadline    DateTime?
+  status      TaskStatus     @default(PENDING)
+  project     Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  progress    TaskProgress[]
+  submissions Submission[]
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@map("project_tasks")
+}
+
+model TaskProgress {
+  id        String      @id @default(uuid())
+  taskId    String
+  studentId String
+  status    TaskStatus
+  notes     String?     @db.Text
+  task      ProjectTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  student   Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  updatedAt DateTime    @updatedAt
+
+  @@map("task_progress")
+}
+
+model Submission {
+  id          String              @id @default(uuid())
+  projectId   String
+  taskId      String?
+  studentId   String
+  title       String
+  description String              @db.Text
+  githubUrl   String?             @db.Text
+  fileUrl     String?             @db.Text
+  status      SubmissionStatus    @default(PENDING_REVIEW)
+  aiAnalysis  String?             @db.LongText
+  project     Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  task        ProjectTask?        @relation(fields: [taskId], references: [id])
+  student     Student             @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  versions    SubmissionVersion[]
+  feedbacks   MentorFeedback[]
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@map("submissions")
+}
+
+model SubmissionVersion {
+  id           String     @id @default(uuid())
+  submissionId String
+  version      Int
+  fileUrl      String?    @db.Text
+  githubUrl    String?    @db.Text
+  notes        String?    @db.Text
+  submission   Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+
+  @@map("submission_versions")
+}
+
+model MentorFeedback {
+  id           String      @id @default(uuid())
+  mentorId     String
+  projectId    String?
+  submissionId String?
+  rating       Int         @default(5)
+  comments     String      @db.Text
+  decision     String      @default("APPROVED")
+  mentor       Mentor      @relation(fields: [mentorId], references: [id], onDelete: Cascade)
+  project      Project?    @relation(fields: [projectId], references: [id])
+  submission   Submission? @relation(fields: [submissionId], references: [id])
+  createdAt    DateTime    @default(now())
+
+  @@map("mentor_feedback")
+}
+
+model MentorSession {
+  id          String              @id @default(uuid())
+  mentorId    String
+  studentId   String
+  topic       String
+  scheduledAt DateTime
+  duration    Int                 @default(30)
+  meetingUrl  String?             @db.Text
+  status      MentorSessionStatus @default(REQUESTED)
+  notes       String?             @db.Text
+  mentor      Mentor              @relation(fields: [mentorId], references: [id], onDelete: Cascade)
+  student     Student             @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  createdAt   DateTime            @default(now())
+
+  @@map("mentor_sessions")
+}
+
+model Achievement {
+  id          String               @id @default(uuid())
+  title       String
+  description String               @db.Text
+  badgeIcon   String
+  criteria    String               @db.Text
+  students    StudentAchievement[]
+  createdAt   DateTime             @default(now())
+
+  @@map("achievements")
+}
+
+model StudentAchievement {
+  id            String      @id @default(uuid())
+  studentId     String
+  achievementId String
+  earnedAt      DateTime    @default(now())
+  student       Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, achievementId])
+  @@map("student_achievements")
+}
+
+model Certificate {
+  id            String   @id @default(uuid())
+  certificateId String   @unique
+  studentId     String
+  courseId      String?
+  projectId     String?
+  title         String
+  issuedAt      DateTime @default(now())
+  qrCodeUrl     String?  @db.Text
+  fileUrl       String?  @db.Text
+  student       Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  course        Course?  @relation(fields: [courseId], references: [id])
+  project       Project? @relation(fields: [projectId], references: [id])
+
+  @@map("certificates")
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  title     String
+  message   String           @db.Text
+  type      NotificationType @default(IN_APP)
+  isRead    Boolean          @default(false)
+  link      String?          @db.Text
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime         @default(now())
+
+  @@map("notifications")
+}
+
+model Announcement {
+  id            String      @id @default(uuid())
+  institutionId String
+  title         String
+  content       String      @db.LongText
+  targetRole    String      @default("ALL")
+  institution   Institution @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+  createdAt     DateTime    @default(now())
+
+  @@map("announcements")
+}
+
+model Attendance {
+  id        String   @id @default(uuid())
+  studentId String
+  date      DateTime
+  status    String
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@map("attendances")
+}
+
+model Message {
+  id         String   @id @default(uuid())
+  senderId   String
+  receiverId String
+  content    String   @db.Text
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@map("messages")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  action    String
+  resource  String
+  details   String?  @db.Text
+  ipAddress String?
+  user      User?    @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@map("audit_logs")
+}
