@@ -84,8 +84,54 @@ export const MentorDashboard = () => {
         />
       </div>
 
-      {/* Quick Action Sections */}
+      {/* Student In-Video Doubts & Deliverables Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Student In-Video Doubts Queue */}
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div>
+              <h3 className="text-sm font-bold text-slate-900">Student In-Video Doubts & Q&A</h3>
+              <p className="text-[11px] text-slate-500">Questions submitted by students inside recorded lectures</p>
+            </div>
+            <span className="text-[10px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-md">
+              Live Q&A
+            </span>
+          </div>
+
+          <div className="space-y-3">
+            <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-3.5 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-900">Sailesh (CS2026-042) • Lecture 1 (14:30)</span>
+                <span className="rounded bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 text-[10px]">Answered</span>
+              </div>
+              <p className="text-[11px] text-slate-700">
+                "Why do we need a STUN server in WebRTC if both clients are already connected to WebSocket?"
+              </p>
+              <div className="rounded-lg bg-white p-2 text-[10px] text-emerald-900 border border-emerald-100">
+                <strong>Viji (Lead Mentor):</strong> "WebSocket exchanges SDP/ICE. STUN discovers public NAT/firewall IP for direct P2P media."
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-amber-100 bg-amber-50/40 p-3.5 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-900">Isaac (CS2026-029) • Lecture 2 (34:50)</span>
+                <span className="rounded bg-amber-100 text-amber-800 font-bold px-2 py-0.5 text-[10px]">Pending Reply</span>
+              </div>
+              <p className="text-[11px] text-slate-700">
+                "Can a student bypass the Python exec() sandbox by importing os or sys modules?"
+              </p>
+              <div className="flex justify-end pt-1">
+                <Link
+                  to="/mentor/submissions"
+                  className="rounded-lg bg-blue-600 px-3 py-1 text-[11px] font-bold text-white shadow-xs hover:bg-blue-500"
+                >
+                  Post Mentor Answer
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Pending Submissions Queue */}
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs space-y-4">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -98,54 +144,25 @@ export const MentorDashboard = () => {
           <div className="space-y-3">
             <div className="rounded-xl border border-slate-100 bg-slate-50 p-3.5 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-900">Alex Mercer • Milestone 1 Deliverable</span>
+                <span className="text-xs font-bold text-slate-900">Sailesh • Python Solution</span>
                 <StatusBadge status="PENDING_REVIEW" />
               </div>
               <p className="text-[11px] text-slate-600">
-                MySQL Relational Schema & Node.js Express REST API integration. AI Pre-check score: 88%.
+                Python Loop Sum Calculation & Multi-Input Test Cases in Sandbox.
               </p>
               <div className="flex justify-end pt-1">
                 <Link
                   to="/mentor/submissions"
                   className="rounded-lg bg-brand-900 px-3 py-1 text-[11px] font-bold text-white shadow-xs hover:bg-brand-800"
                 >
-                  Grade & Review
+                  Review & Grade
                 </Link>
               </div>
             </div>
           </div>
         </div>
-
-        {/* Scheduled Sessions */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <h3 className="text-sm font-bold text-slate-900">Upcoming 1-on-1 Mentorship Sessions</h3>
-            <Link to="/mentor/sessions" className="text-xs font-bold text-brand-900 hover:underline">
-              Schedule New
-            </Link>
-          </div>
-
-          <div className="space-y-3">
-            <div className="rounded-xl border border-purple-100 bg-purple-50/50 p-3.5 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-purple-950">Student: Alex Mercer (Batch 2026-Alpha)</span>
-                <span className="rounded bg-purple-200 text-purple-900 font-bold px-2 py-0.5 text-[10px]">Tomorrow 4:00 PM</span>
-              </div>
-              <p className="text-[11px] text-purple-800">Topic: Architecture Review & Query Optimization</p>
-              <div className="flex justify-end pt-1">
-                <a
-                  href="https://meet.jit.si/EdTechMentorSession-Demo"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="rounded-lg bg-purple-900 px-3 py-1 text-[11px] font-bold text-white shadow-xs hover:bg-purple-800"
-                >
-                  Join Video Room
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
+
     </div>
   );
 };

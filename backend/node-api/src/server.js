@@ -274,6 +274,233 @@ app.delete('/api/recorded-classes/:id', (req, res) => {
 });
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ─── In-Video Doubts & Discussion API ─────────────────────────────────────────
+// Students ask questions inside the video player (with timestamp). Mentors/Admins reply anytime.
+let lectureDoubts = [
+  {
+    id: 'dbt-1',
+    lectureId: 'rec-1',
+    lectureTitle: 'Lecture 1: High-Concurrency WebSockets & Real-Time Signaling',
+    studentName: 'Sailesh',
+    studentEmail: 'sailesh@edtech.com',
+    studentRoll: 'CS2026-042',
+    timestamp: '14:30',
+    question: 'Why do we need a STUN server in WebRTC if both clients are already connected to the WebSocket signaling server?',
+    status: 'ANSWERED',
+    mentorReply: 'Great question Sailesh! The WebSocket signaling server only exchanges SDP offers and ICE candidates. However, real client IP addresses are often behind NAT/firewalls. The STUN server helps each client discover its public IP and port so direct P2P media streaming can happen without passing video through the central server.',
+    repliedBy: 'Viji (Lead Mentor)',
+    repliedAt: Date.now() - 3600000,
+    createdAt: Date.now() - 7200000,
+  },
+  {
+    id: 'dbt-2',
+    lectureId: 'rec-1',
+    lectureTitle: 'Lecture 1: High-Concurrency WebSockets & Real-Time Signaling',
+    studentName: 'Sujitha',
+    studentEmail: 'sujitha@edtech.com',
+    studentRoll: 'CS2026-018',
+    timestamp: '28:45',
+    question: 'How does BroadcastChannel differ from WebSocket for multi-tab communication?',
+    status: 'ANSWERED',
+    mentorReply: 'BroadcastChannel is purely browser-local across same-origin tabs on the same computer without any network requests. WebSockets connect over the internet to the central server so different users on different PCs can communicate.',
+    repliedBy: 'Viji (Lead Mentor)',
+    repliedAt: Date.now() - 1800000,
+    createdAt: Date.now() - 3600000,
+  },
+  {
+    id: 'dbt-3',
+    lectureId: 'rec-2',
+    lectureTitle: 'Lecture 2: Python Memory Management, AST Parsing & Custom Sandbox',
+    studentName: 'Isaac',
+    studentEmail: 'isaac@edtech.com',
+    studentRoll: 'CS2026-029',
+    timestamp: '34:50',
+    question: 'Can a student bypass the Python exec() sandbox by importing os or sys modules?',
+    status: 'PENDING',
+    mentorReply: null,
+    repliedBy: null,
+    repliedAt: null,
+    createdAt: Date.now() - 900000,
+  },
+];
+
+app.get('/api/lecture-doubts', (req, res) => {
+  const { lectureId } = req.query;
+  if (lectureId) {
+    const filtered = lectureDoubts.filter((d) => d.lectureId === lectureId);
+    return res.json({ success: true, data: filtered });
+  }
+  return res.json({ success: true, data: lectureDoubts });
+});
+
+app.post('/api/lecture-doubts', (req, res) => {
+  const { lectureId, lectureTitle, studentName, studentEmail, studentRoll, timestamp, question } = req.body;
+  if (!lectureId || !question) {
+    return res.status(400).json({ error: 'lectureId and question are required' });
+  }
+
+  const newDoubt = {
+    id: 'dbt-' + Date.now(),
+    lectureId,
+    lectureTitle: lectureTitle || 'Recorded Class Lecture',
+    studentName: studentName || 'Student',
+    studentEmail: studentEmail || 'student@edtech.com',
+    studentRoll: studentRoll || 'CS2026',
+    timestamp: timestamp || '00:00',
+    question,
+    status: 'PENDING',
+    mentorReply: null,
+    repliedBy: null,
+    repliedAt: null,
+    createdAt: Date.now(),
+  };
+
+  lectureDoubts.unshift(newDoubt);
+  return res.status(201).json({ success: true, data: newDoubt });
+});
+
+app.post('/api/lecture-doubts/:id/reply', (req, res) => {
+  const { id } = req.params;
+  const { reply, repliedBy } = req.body;
+  if (!reply) {
+    return res.status(400).json({ error: 'Reply text is required' });
+  }
+
+  const index = lectureDoubts.findIndex((d) => d.id === id);
+  if (index === -1) {
+    return res.status(404).json({ error: 'Doubt not found' });
+  }
+
+  lectureDoubts[index] = {
+    ...lectureDoubts[index],
+    mentorReply: reply,
+    repliedBy: repliedBy || 'Viji (Lead Mentor)',
+    repliedAt: Date.now(),
+    status: 'ANSWERED',
+  };
+
+  return res.json({ success: true, data: lectureDoubts[index] });
+});
+
+app.delete('/api/lecture-doubts/:id', (req, res) => {
+  const { id } = req.params;
+  lectureDoubts = lectureDoubts.filter((d) => d.id !== id);
+  return res.json({ success: true, message: 'Doubt deleted successfully' });
+});
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ─── Dynamic Most Asked Questions (FAQ) API ──────────────────────────────────
+// Admin can dynamically create, update, and delete FAQs for lectures.
+let lectureFaqs = [
+  {
+    id: 'faq-1',
+    lectureId: 'rec-1',
+    subject: 'Full-Stack Architecture',
+    question: 'How do we handle WebSocket reconnects when internet drops unexpectedly?',
+    answer: 'Implement an exponential backoff reconnection strategy on the client. For example, retry after 1s, 2s, 4s, 8s up to 30s max, and use a heartbeat ping/pong every 15 seconds to detect dead TCP sockets.',
+    codeSnippet: `const connectWebSocket = (retryDelay = 1000) => {\n  const ws = new WebSocket('wss://api.edupulse.com');\n  ws.onclose = () => {\n    setTimeout(() => connectWebSocket(Math.min(retryDelay * 2, 30000)), retryDelay);\n  };\n};`,
+    upvotes: 14,
+    author: 'Admin Faculty',
+    createdAt: Date.now() - 172800000,
+  },
+  {
+    id: 'faq-2',
+    lectureId: 'rec-2',
+    subject: 'Python Core & Compilers',
+    question: 'What is the difference between ast.parse() and eval() in Python security?',
+    answer: 'eval() executes the code string immediately in the runtime, which is dangerous if untrusted. ast.parse() only builds a syntax tree structure in memory without executing any instructions, allowing full security inspection before running.',
+    codeSnippet: `import ast\n# Safe inspection without execution\ntree = ast.parse("x = 10 + 20")\nprint([node.__class__.__name__ for node in tree.body])`,
+    upvotes: 19,
+    author: 'Admin Faculty',
+    createdAt: Date.now() - 259200000,
+  },
+  {
+    id: 'faq-3',
+    lectureId: 'rec-3',
+    subject: 'Database Engineering',
+    question: 'When should we use Composite Indexes vs Single Column Indexes in MySQL?',
+    answer: 'Use Composite Indexes (ColumnA, ColumnB) when queries frequently filter on both columns in the WHERE clause, adhering to the Leftmost Prefix Rule.',
+    codeSnippet: `CREATE INDEX idx_user_status ON submissions (userId, status);`,
+    upvotes: 23,
+    author: 'Admin Faculty',
+    createdAt: Date.now() - 345600000,
+  },
+  {
+    id: 'faq-4',
+    lectureId: 'rec-4',
+    subject: 'Cloud & Infrastructure',
+    question: 'Why should we avoid running Docker containers as root in production?',
+    answer: 'Running containers as root poses a major security risk. If an attacker exploits a container escape vulnerability, they gain root access on the host VM.',
+    codeSnippet: `FROM node:20-alpine\nUSER node\nCMD ["node", "server.js"]`,
+    upvotes: 12,
+    author: 'Admin Faculty',
+    createdAt: Date.now() - 432000000,
+  },
+];
+
+app.get('/api/lecture-faqs', (req, res) => {
+  const { lectureId } = req.query;
+  if (lectureId) {
+    const filtered = lectureFaqs.filter((f) => f.lectureId === lectureId || f.lectureId === 'all');
+    return res.json({ success: true, data: filtered });
+  }
+  return res.json({ success: true, data: lectureFaqs });
+});
+
+app.post('/api/lecture-faqs', (req, res) => {
+  const { lectureId, subject, question, answer, codeSnippet, author } = req.body;
+  if (!question || !answer) {
+    return res.status(400).json({ error: 'Question and Answer are required' });
+  }
+
+  const newFaq = {
+    id: 'faq-' + Date.now(),
+    lectureId: lectureId || 'all',
+    subject: subject || 'General',
+    question,
+    answer,
+    codeSnippet: codeSnippet || '',
+    upvotes: 0,
+    author: author || 'Admin Faculty',
+    createdAt: Date.now(),
+  };
+
+  lectureFaqs.unshift(newFaq);
+  return res.status(201).json({ success: true, data: newFaq });
+});
+
+app.put('/api/lecture-faqs/:id', (req, res) => {
+  const { id } = req.params;
+  const index = lectureFaqs.findIndex((f) => f.id === id);
+  if (index === -1) {
+    return res.status(404).json({ error: 'FAQ not found' });
+  }
+
+  lectureFaqs[index] = {
+    ...lectureFaqs[index],
+    ...req.body,
+    updatedAt: Date.now(),
+  };
+
+  return res.json({ success: true, data: lectureFaqs[index] });
+});
+
+app.delete('/api/lecture-faqs/:id', (req, res) => {
+  const { id } = req.params;
+  lectureFaqs = lectureFaqs.filter((f) => f.id !== id);
+  return res.json({ success: true, message: 'FAQ deleted successfully' });
+});
+
+app.post('/api/lecture-faqs/:id/upvote', (req, res) => {
+  const { id } = req.params;
+  const faq = lectureFaqs.find((f) => f.id === id);
+  if (!faq) return res.status(404).json({ error: 'FAQ not found' });
+  faq.upvotes = (faq.upvotes || 0) + 1;
+  return res.json({ success: true, upvotes: faq.upvotes });
+});
+// ─────────────────────────────────────────────────────────────────────────────
+
+
 
 
 
