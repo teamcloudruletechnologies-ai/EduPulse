@@ -3,121 +3,100 @@ import { api } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import { useNavigate } from 'react-router-dom';
 import {
-  BookOpen,
-  CheckCircle,
+  Video,
   Play,
-  HelpCircle,
-  Code2,
-  ChevronRight,
-  Sparkles,
-  FileText,
   Clock,
-  Award,
+  Calendar,
+  User,
+  Search,
   CheckCircle2,
+  Sparkles,
+  Layers,
+  Film,
   X,
-  Send,
-  Brain,
+  Code2,
+  ExternalLink,
+  BookOpen,
+  Download,
+  Share2,
+  Check,
+  RefreshCw,
 } from 'lucide-react';
 
-const DEFAULT_COURSES = [
+const DEFAULT_RECORDED_CLASSES = [
   {
-    id: 'crs-1',
-    code: 'CS-501',
-    title: 'Advanced Full-Stack Engineering & Microservices',
-    category: 'Software Engineering',
-    description: 'Design patterns, REST & GraphQL APIs, Docker containers, and high-concurrency microservices.',
-    modules: [
-      {
-        id: 'mod-1',
-        title: 'Module 1: High-Performance Backend Architecture',
-        lessons: [
-          { id: 'l1', title: 'Express & Fastify High-Throughput Request Pipeline', duration: 45 },
-          { id: 'l2', title: 'Prisma ORM & MySQL Query Optimization Techniques', duration: 50 },
-        ],
-        quizzes: [
-          {
-            id: 'q1',
-            title: 'Backend Architecture & Database Tuning Assessment',
-            passMarks: 70,
-            questions: [
-              {
-                id: 1,
-                question: 'Which index type is best suited for exact match lookups on primary keys in MySQL?',
-                options: ['B-Tree Index', 'Full-Text Index', 'Spatial Index', 'Linear Scan'],
-                correctAnswer: 0,
-              },
-              {
-                id: 2,
-                question: 'What is the purpose of database connection pooling?',
-                options: ['Encrypting SQL queries', 'Reusing active database connections to reduce latency', 'Auto-generating migrations', 'Enforcing foreign key constraints'],
-                correctAnswer: 1,
-              },
-              {
-                id: 3,
-                question: 'In Node.js event loop, which phase executes setTimeout callbacks?',
-                options: ['Poll phase', 'Timers phase', 'Check phase', 'Close callbacks'],
-                correctAnswer: 1,
-              },
-            ],
-          },
-        ],
-      },
-      {
-        id: 'mod-2',
-        title: 'Module 2: Client-Side Performance & React V8 Execution',
-        lessons: [
-          { id: 'l3', title: 'React 18 Concurrent Rendering & Fiber Reconciliation', duration: 40 },
-          { id: 'l4', title: 'Custom Hooks Architecture & Global State Synchronization', duration: 45 },
-        ],
-        quizzes: [
-          {
-            id: 'q2',
-            title: 'React Concurrent & State Management Test',
-            passMarks: 60,
-            questions: [
-              {
-                id: 1,
-                question: 'What happens when state updates are scheduled in React batching?',
-                options: ['Each setState re-renders immediately', 'Multiple setState calls are grouped into a single render', 'State resets to default', 'Components unmount'],
-                correctAnswer: 1,
-              },
-            ],
-          },
-        ],
-      },
+    id: 'rec-1',
+    title: 'Lecture 1: High-Concurrency WebSockets & Real-Time Signaling',
+    subject: 'Full-Stack Architecture',
+    faculty: 'Viji (Lead Mentor)',
+    duration: '48 mins',
+    date: '2026-09-01',
+    videoUrl: 'https://www.youtube.com/embed/1BfCnjr_Vjg',
+    thumbnail: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&auto=format&fit=crop&q=80',
+    description: 'Comprehensive breakdown of WebSockets, duplex TCP socket streaming, peer-to-peer WebRTC signaling handshakes, and broadcast channels.',
+    tags: ['WebSockets', 'WebRTC', 'Node.js', 'Real-Time'],
+    timestamps: [
+      { time: '02:15', label: 'Introduction to Full Duplex Sockets' },
+      { time: '14:30', label: 'WebRTC Signaling Loop & STUN Servers' },
+      { time: '28:45', label: 'Building the BroadcastChannel in React' },
+      { time: '41:10', label: 'Live Q&A & Error Handling' },
     ],
+    uploadedBy: 'Admin Faculty',
   },
   {
-    id: 'crs-2',
-    code: 'CS-602',
-    title: 'Cloud Native DevOps, CI/CD & Automated Testing',
-    category: 'Cloud & Infrastructure',
-    description: 'Docker containerization, GitHub Actions workflows, Kubernetes clusters, and automated unit testing.',
-    modules: [
-      {
-        id: 'mod-201',
-        title: 'Module 1: Continuous Integration & Automated Pipelines',
-        lessons: [
-          { id: 'l201', title: 'GitHub Actions Matrix Builds & Fast Fail Execution', duration: 35 },
-          { id: 'l202', title: 'Docker Multi-Stage Builds & Minimal Production Images', duration: 40 },
-        ],
-        quizzes: [
-          {
-            id: 'q201',
-            title: 'DevOps & Containerization Quiz',
-            passMarks: 75,
-            questions: [
-              {
-                id: 1,
-                question: 'Why use multi-stage Docker builds?',
-                options: ['To create separate containers for each file', 'To keep production images small by discarding build tools', 'To speed up network downloads', 'To bypass Dockerfile rules'],
-                correctAnswer: 1,
-              },
-            ],
-          },
-        ],
-      },
+    id: 'rec-2',
+    title: 'Lecture 2: Python Memory Management, AST Parsing & Custom Sandbox',
+    subject: 'Python Core & Compilers',
+    faculty: 'Viji (Lead Mentor)',
+    duration: '52 mins',
+    date: '2026-08-30',
+    videoUrl: 'https://www.youtube.com/embed/rfscVS0vtbw',
+    thumbnail: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800&auto=format&fit=crop&q=80',
+    description: 'Deep dive into Python abstract syntax tree parsing (ast module), code decomposition, sandbox safety guards, and dynamic execution traces.',
+    tags: ['Python', 'AST', 'Compilers', 'Memory'],
+    timestamps: [
+      { time: '01:00', label: 'Python Bytecode & Compiler Pipeline' },
+      { time: '16:20', label: 'AST Node Visiting & Syntax Decomposition' },
+      { time: '34:50', label: 'Safe Sandbox Execution with Restricted Builtins' },
+      { time: '47:00', label: 'Live Debugging AST Parser' },
     ],
+    uploadedBy: 'Admin Faculty',
+  },
+  {
+    id: 'rec-3',
+    title: 'Lecture 3: Relational Query Optimization, B-Tree Indexes & TiDB Cloud',
+    subject: 'Database Engineering',
+    faculty: 'Admin Faculty',
+    duration: '42 mins',
+    date: '2026-08-28',
+    videoUrl: 'https://www.youtube.com/embed/HXV3zeRR3h4',
+    thumbnail: 'https://images.unsplash.com/photo-1544383835-bda2bc66a55d?w=800&auto=format&fit=crop&q=80',
+    description: 'Mastering SQL joins, B-Tree index structures, clustered vs non-clustered indexes, connection pooling, and distributed TiDB query plans.',
+    tags: ['MySQL', 'TiDB', 'Indexing', 'Query Optimization'],
+    timestamps: [
+      { time: '03:40', label: 'B-Tree Index Data Structure Deep Dive' },
+      { time: '18:15', label: 'Analyzing EXPLAIN Query Execution Plans' },
+      { time: '31:00', label: 'Connecting to Cloud MySQL / TiDB Cluster' },
+    ],
+    uploadedBy: 'Admin Faculty',
+  },
+  {
+    id: 'rec-4',
+    title: 'Lecture 4: Microservices Architecture & Containerization with Docker',
+    subject: 'Cloud & Infrastructure',
+    faculty: 'Viji (Lead Mentor)',
+    duration: '56 mins',
+    date: '2026-08-25',
+    videoUrl: 'https://www.youtube.com/embed/fqMOX6JJhGo',
+    thumbnail: 'https://images.unsplash.com/photo-1607799279861-4dd421887fb3?w=800&auto=format&fit=crop&q=80',
+    description: 'Learn how to split monolithic architectures into resilient microservices, write optimized multi-stage Dockerfiles, and deploy to cloud clusters.',
+    tags: ['Docker', 'Microservices', 'DevOps', 'Cloud'],
+    timestamps: [
+      { time: '05:10', label: 'Monolith vs Microservices Trade-offs' },
+      { time: '22:00', label: 'Writing Production-Grade Multi-Stage Dockerfiles' },
+      { time: '40:30', label: 'Service Discovery & Health Probes' },
+    ],
+    uploadedBy: 'Admin Faculty',
   },
 ];
 
@@ -125,375 +104,397 @@ export const MyLearning = () => {
   const { showToast } = useToast();
   const navigate = useNavigate();
 
-  const [courses, setCourses] = useState(() => {
-    const saved = localStorage.getItem('edtech_shared_courses');
+  const [classes, setClasses] = useState(() => {
+    const saved = localStorage.getItem('edtech_recorded_classes');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       } catch (e) {}
     }
-    return DEFAULT_COURSES;
+    return DEFAULT_RECORDED_CLASSES;
   });
 
-  const [selectedCourse, setSelectedCourse] = useState(() => courses[0] || null);
-  const [activeTab, setActiveTab] = useState('ALL');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedSubject, setSelectedSubject] = useState('ALL');
+  const [activePlayerClass, setActivePlayerClass] = useState(null);
 
-  // Interactive Quiz Assessment Modal State
-  const [activeQuizModal, setActiveQuizModal] = useState(null);
-  const [selectedAnswers, setSelectedAnswers] = useState({});
-  const [quizResult, setQuizResult] = useState(null);
+  // Track completed/watched classes in localStorage
+  const [watchedClasses, setWatchedClasses] = useState(() => {
+    const saved = localStorage.getItem('edtech_student_watched_classes');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {}
+    }
+    return ['rec-1'];
+  });
+
+  const fetchClasses = async () => {
+    try {
+      const res = await api.get('/recorded-classes');
+      if (res.data?.success && Array.isArray(res.data.data)) {
+        setClasses(res.data.data);
+        localStorage.setItem('edtech_recorded_classes', JSON.stringify(res.data.data));
+      }
+    } catch (err) {
+      console.warn('Using local recorded classes cache:', err.message);
+    }
+  };
 
   useEffect(() => {
+    fetchClasses();
+
+    // Listen for admin changes from other tabs or devices
     const handleStorageChange = (e) => {
-      if (e.key === 'edtech_shared_courses') {
+      if (e.key === 'edtech_recorded_classes') {
         try {
           const parsed = JSON.parse(e.newValue);
           if (Array.isArray(parsed)) {
-            setCourses(parsed);
-            if (selectedCourse) {
-              const matched = parsed.find((c) => c.id === selectedCourse.id);
-              if (matched) setSelectedCourse(matched);
-            }
+            setClasses(parsed);
           }
         } catch (err) {}
       }
     };
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
-  }, [selectedCourse]);
+  }, []);
 
-  const handleOpenQuiz = (quiz) => {
-    setActiveQuizModal(quiz);
-    setSelectedAnswers({});
-    setQuizResult(null);
-  };
-
-  const handleSelectOption = (questionId, optionIdx) => {
-    setSelectedAnswers((prev) => ({
-      ...prev,
-      [questionId]: optionIdx,
-    }));
-  };
-
-  const handleSubmitQuiz = (e) => {
-    e.preventDefault();
-    if (!activeQuizModal || !activeQuizModal.questions) return;
-
-    const questions = activeQuizModal.questions;
-    let correctCount = 0;
-
-    questions.forEach((q, idx) => {
-      const qId = q.id || idx;
-      if (selectedAnswers[qId] === q.correctAnswer) {
-        correctCount++;
-      }
+  const toggleWatched = (classId, e) => {
+    if (e) e.stopPropagation();
+    setWatchedClasses((prev) => {
+      const updated = prev.includes(classId)
+        ? prev.filter((id) => id !== classId)
+        : [...prev, classId];
+      localStorage.setItem('edtech_student_watched_classes', JSON.stringify(updated));
+      showToast(
+        updated.includes(classId)
+          ? '🎉 Lecture marked as Watched & Completed!'
+          : 'Lecture marked as Incomplete',
+        'success'
+      );
+      return updated;
     });
-
-    const scorePct = Math.round((correctCount / questions.length) * 100);
-    const passed = scorePct >= (activeQuizModal.passMarks || 60);
-
-    setQuizResult({
-      score: scorePct,
-      correctCount,
-      totalCount: questions.length,
-      passed,
-      passMarks: activeQuizModal.passMarks || 60,
-    });
-
-    if (passed) {
-      showToast(`🎉 Congratulations! You scored ${scorePct}% and passed "${activeQuizModal.title}"!`, 'success');
-    } else {
-      showToast(`Assessment completed: ${scorePct}%. Score is below pass mark (${activeQuizModal.passMarks || 60}%). Review curriculum and retry!`, 'error');
-    }
   };
+
+  const subjects = ['ALL', ...Array.from(new Set(classes.map((c) => c.subject)))];
+
+  const filteredClasses = classes.filter((c) => {
+    const matchesSubject = selectedSubject === 'ALL' || c.subject === selectedSubject;
+    const matchesSearch =
+      c.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.faculty?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.tags?.some((t) => t.toLowerCase().includes(searchQuery.toLowerCase()));
+    return matchesSubject && matchesSearch;
+  });
+
+  const completedPct = classes.length > 0
+    ? Math.round((watchedClasses.length / classes.length) * 100)
+    : 0;
 
   return (
     <div className="space-y-6">
-      {/* Header Banner */}
+      {/* Top Banner Header */}
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
             <div className="flex items-center space-x-2">
               <span className="rounded-md bg-blue-50 border border-blue-200 px-2.5 py-0.5 text-[11px] font-bold text-blue-700">
-                Mentor-Authored Interactive Curriculum
+                Admin-Published Video Archive
               </span>
-              <span className="text-xs text-slate-400 font-semibold">• Real-Time Sync</span>
+              <span className="text-xs text-slate-400 font-semibold">• Live Stream HD</span>
             </div>
-            <h1 className="text-2xl font-extrabold text-slate-900 mt-1.5 tracking-tight">
-              Interactive Courses & Assessment Quizzes
+            <h1 className="text-2xl font-extrabold text-slate-900 mt-1.5 tracking-tight flex items-center space-x-2">
+              <Film className="h-6 w-6 text-blue-600" />
+              <span>Recorded Classes & Video Lecture Hub</span>
             </h1>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Read architectural lessons created by your mentor, test live code examples, and take interactive MCQ quiz tests
+            <p className="text-xs text-slate-500 mt-0.5 max-w-2xl">
+              Watch high-definition classroom lectures uploaded by Admin and your Lead Mentor (Viji). Review key timestamps, track watched progress, and open live code sandboxes.
             </p>
           </div>
 
-          <div className="flex space-x-2">
-            {['ALL', 'IN_PROGRESS', 'COMPLETED'].map((tab) => (
+          {/* Progress Indicator Card */}
+          <div className="flex items-center space-x-4 bg-slate-50 border border-slate-200 rounded-2xl p-4 shrink-0">
+            <div>
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">
+                Classroom Progress
+              </span>
+              <p className="text-lg font-black text-slate-900 mt-0.5">
+                {watchedClasses.length} / {classes.length} <span className="text-xs text-slate-500 font-normal">Watched</span>
+              </p>
+            </div>
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 text-blue-700 font-black text-xs ring-4 ring-blue-50">
+              {completedPct}%
+            </div>
+          </div>
+        </div>
+
+        {/* Filter and Search Toolbar */}
+        <div className="mt-6 pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="relative w-full sm:w-80">
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search lectures by topic, title, faculty..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full rounded-xl border border-slate-200 pl-9 pr-3 py-1.5 text-xs text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none"
+            />
+          </div>
+
+          <div className="flex items-center space-x-1.5 overflow-x-auto w-full sm:w-auto">
+            {subjects.map((subj) => (
               <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`rounded-xl px-4 py-2 text-xs font-bold transition-all ${
-                  activeTab === tab
+                key={subj}
+                onClick={() => setSelectedSubject(subj)}
+                className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-all shrink-0 cursor-pointer ${
+                  selectedSubject === subj
                     ? 'bg-blue-600 text-white shadow-xs'
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
-                {tab.replace('_', ' ')}
+                {subj}
               </button>
             ))}
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left: Course List */}
-        <div className="lg:col-span-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xs font-extrabold uppercase tracking-wider text-slate-400">
-              Published Courses ({courses.length})
-            </h2>
-            <span className="text-[11px] font-bold text-blue-600">Synced with Mentor</span>
-          </div>
+      {/* Recorded Classes Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filteredClasses.map((cls) => {
+          const isWatched = watchedClasses.includes(cls.id);
+          return (
+            <div
+              key={cls.id}
+              onClick={() => setActivePlayerClass(cls)}
+              className="rounded-2xl border border-slate-200 bg-white shadow-xs overflow-hidden flex flex-col justify-between hover:border-blue-400 hover:shadow-md transition-all group cursor-pointer"
+            >
+              {/* Video Thumbnail */}
+              <div className="relative h-48 w-full bg-slate-950 overflow-hidden">
+                <img
+                  src={cls.thumbnail}
+                  alt={cls.title}
+                  className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300 opacity-90"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/30 to-transparent" />
 
-          <div className="space-y-2.5">
-            {courses.map((c) => (
-              <div
-                key={c.id}
-                onClick={() => setSelectedCourse(c)}
-                className={`cursor-pointer rounded-2xl border p-4 transition-all ${
-                  selectedCourse?.id === c.id
-                    ? 'border-blue-500 bg-blue-50/40 shadow-xs ring-1 ring-blue-500'
-                    : 'border-slate-200 bg-white hover:border-blue-300 shadow-xs'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="rounded bg-blue-100 px-2 py-0.5 text-[10px] font-extrabold text-blue-900 uppercase">
-                    {c.code}
+                {/* Top Badges */}
+                <div className="absolute top-3 left-3 flex items-center space-x-1.5">
+                  <span className="rounded-md bg-blue-600/90 backdrop-blur-xs px-2.5 py-1 text-[10px] font-extrabold text-white tracking-wide uppercase">
+                    {cls.subject}
                   </span>
-                  <span className="text-[11px] font-bold text-emerald-700">Active Syllabus</span>
+                  {isWatched && (
+                    <span className="flex items-center space-x-1 rounded-md bg-emerald-600/90 backdrop-blur-xs px-2 py-1 text-[10px] font-bold text-white">
+                      <Check className="h-3 w-3" />
+                      <span>Watched</span>
+                    </span>
+                  )}
                 </div>
-                <h3 className="text-sm font-bold text-slate-900 mt-2">{c.title}</h3>
-                <p className="text-xs text-slate-600 mt-1 line-clamp-2">{c.description}</p>
-                <div className="mt-3 flex items-center justify-between text-[11px] text-slate-500 pt-2 border-t border-slate-100">
-                  <span>{c.modules?.length || 1} Modules</span>
-                  <span className="text-blue-600 font-bold flex items-center">
-                    <span>Explore</span>
-                    <ChevronRight className="h-3.5 w-3.5 ml-0.5" />
-                  </span>
+
+                {/* Duration Badge */}
+                <div className="absolute bottom-3 right-3 flex items-center space-x-1 rounded-md bg-slate-900/90 backdrop-blur-xs px-2.5 py-1 text-[11px] font-bold text-white">
+                  <Clock className="h-3.5 w-3.5 text-blue-400" />
+                  <span>{cls.duration}</span>
+                </div>
+
+                {/* Play Button Overlay */}
+                <div className="absolute inset-0 m-auto h-12 w-12 rounded-full bg-blue-600/90 text-white flex items-center justify-center shadow-xl group-hover:scale-115 group-hover:bg-blue-500 transition-all">
+                  <Play className="h-5 w-5 fill-white ml-0.5" />
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
 
-        {/* Right: Course Content & Assessment Quizzes */}
-        <div className="lg:col-span-8 space-y-4">
-          {selectedCourse ? (
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs space-y-6">
-              {/* Course Title Header */}
-              <div className="border-b border-slate-200 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              {/* Class Info Content */}
+              <div className="p-5 flex-1 flex flex-col justify-between space-y-3">
                 <div>
-                  <span className="text-xs font-extrabold text-blue-600 uppercase tracking-wider">
-                    {selectedCourse.code} • Full Syllabus
-                  </span>
-                  <h2 className="text-xl font-bold text-slate-900 mt-1">{selectedCourse.title}</h2>
-                  <p className="text-xs text-slate-500 mt-1">{selectedCourse.description}</p>
-                </div>
-                <button
-                  onClick={() => navigate('/student/submissions')}
-                  className="flex items-center space-x-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-emerald-500 transition-colors shrink-0"
-                >
-                  <Play className="h-3.5 w-3.5 fill-white" />
-                  <span>Open Online Compiler</span>
-                </button>
-              </div>
-
-              {/* Modules, Lessons & Quizzes */}
-              <div className="space-y-4">
-                <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-400">
-                  Course Modules & Interactive Assessments
-                </h3>
-
-                {selectedCourse.modules?.map((mod, idx) => (
-                  <div key={mod.id || idx} className="rounded-xl border border-slate-200 p-4 space-y-3">
-                    <h4 className="text-xs font-bold text-slate-900 flex items-center justify-between">
-                      <span>Module {idx + 1}: {mod.title}</span>
-                      <span className="text-[10px] text-slate-400 font-medium">
-                        ({mod.lessons?.length || 0} Lessons • {mod.quizzes?.length || 0} Quizzes)
-                      </span>
-                    </h4>
-
-                    <div className="space-y-2">
-                      {/* Lessons */}
-                      {mod.lessons?.map((les) => (
-                        <div
-                          key={les.id}
-                          className="flex items-center justify-between rounded-lg bg-slate-50 p-2.5 text-xs border border-slate-100 hover:bg-blue-50/50 transition-colors"
-                        >
-                          <div className="flex items-center space-x-2">
-                            <Play className="h-4 w-4 text-blue-600" />
-                            <span className="font-semibold text-slate-800">{les.title}</span>
-                          </div>
-                          <div className="flex items-center space-x-3 text-slate-500">
-                            <span className="flex items-center">
-                              <Clock className="h-3 w-3 mr-1 text-slate-400" /> {les.duration} mins
-                            </span>
-                            <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                          </div>
-                        </div>
-                      ))}
-
-                      {/* Quizzes */}
-                      {mod.quizzes?.map((qz) => (
-                        <div
-                          key={qz.id}
-                          className="flex items-center justify-between rounded-xl bg-purple-50/70 p-3 text-xs text-purple-950 border border-purple-200"
-                        >
-                          <div className="flex items-center space-x-2">
-                            <HelpCircle className="h-4.5 w-4.5 text-purple-700" />
-                            <div>
-                              <span className="font-bold block text-purple-950">{qz.title}</span>
-                              <span className="text-[10px] text-purple-700">Pass Mark: {qz.passMarks || 60}% • {qz.questions?.length || 1} Questions</span>
-                            </div>
-                          </div>
-                          <button
-                            onClick={() => handleOpenQuiz(qz)}
-                            className="rounded-xl bg-purple-900 px-4 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-purple-800 transition-colors cursor-pointer"
-                          >
-                            Take Quiz Test ➔
-                          </button>
-                        </div>
-                      ))}
-                    </div>
+                  <div className="flex items-center justify-between text-[11px] text-slate-400">
+                    <span className="flex items-center space-x-1 font-semibold text-slate-600">
+                      <User className="h-3.5 w-3.5 text-blue-600" />
+                      <span>{cls.faculty}</span>
+                    </span>
+                    <span className="flex items-center space-x-1">
+                      <Calendar className="h-3 w-3 text-slate-400" />
+                      <span>{cls.date}</span>
+                    </span>
                   </div>
-                ))}
+
+                  <h3 className="text-sm font-bold text-slate-900 mt-2 line-clamp-2 leading-snug group-hover:text-blue-600 transition-colors">
+                    {cls.title}
+                  </h3>
+
+                  <p className="text-xs text-slate-500 mt-1.5 line-clamp-2 leading-relaxed">
+                    {cls.description}
+                  </p>
+                </div>
+
+                {/* Tags & Action Buttons */}
+                <div className="space-y-3 pt-3 border-t border-slate-100">
+                  <div className="flex flex-wrap gap-1">
+                    {(cls.tags || []).map((tag, idx) => (
+                      <span
+                        key={idx}
+                        className="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600"
+                      >
+                        #{tag}
+                      </span>
+                    ))}
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActivePlayerClass(cls);
+                      }}
+                      className="flex items-center space-x-1.5 rounded-xl bg-blue-600 px-4 py-1.5 text-xs font-bold text-white shadow hover:bg-blue-500 transition-colors cursor-pointer"
+                    >
+                      <Play className="h-3.5 w-3.5 fill-white" />
+                      <span>Watch Lecture</span>
+                    </button>
+
+                    <button
+                      onClick={(e) => toggleWatched(cls.id, e)}
+                      className={`flex items-center space-x-1 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
+                        isWatched
+                          ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
+                          : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                      }`}
+                      title={isWatched ? 'Click to mark as uncompleted' : 'Click to mark as watched'}
+                    >
+                      <CheckCircle2 className={`h-3.5 w-3.5 ${isWatched ? 'text-emerald-600' : 'text-slate-400'}`} />
+                      <span>{isWatched ? 'Completed' : 'Mark Done'}</span>
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
-          ) : (
-            <div className="p-8 text-center text-xs text-slate-400 bg-white rounded-2xl border border-slate-200">
-              Select a course to view syllabus.
-            </div>
-          )}
-        </div>
+          );
+        })}
       </div>
 
-      {/* INTERACTIVE QUIZ EXAMINATION MODAL */}
-      {activeQuizModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
-          <div className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl space-y-5 animate-scale-up max-h-[90vh] overflow-y-auto">
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center space-x-2">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-100 text-purple-700">
-                  <Brain className="h-5 w-5" />
+      {filteredClasses.length === 0 && (
+        <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center space-y-3">
+          <Film className="h-10 w-10 text-slate-300 mx-auto" />
+          <h3 className="text-sm font-bold text-slate-700">No Recorded Classes Found</h3>
+          <p className="text-xs text-slate-400 max-w-sm mx-auto">
+            No lecture recordings match your search filter. Check back soon as Admin uploads new sessions.
+          </p>
+        </div>
+      )}
+
+      {/* THEATER MODE VIDEO PLAYER MODAL */}
+      {activePlayerClass && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4">
+          <div className="w-full max-w-5xl rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl overflow-hidden animate-scale-up max-h-[92vh] flex flex-col">
+            {/* Top Bar Header */}
+            <div className="flex items-center justify-between p-4 border-b border-slate-800 bg-slate-950">
+              <div className="flex items-center space-x-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white">
+                  <Film className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-slate-900">{activeQuizModal.title}</h3>
-                  <p className="text-[11px] text-slate-500">Pass Mark: {activeQuizModal.passMarks || 60}% • Instant AI Scoring</p>
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-blue-400">
+                    {activePlayerClass.subject} • {activePlayerClass.duration}
+                  </span>
+                  <h3 className="text-sm font-bold text-white truncate max-w-xl">
+                    {activePlayerClass.title}
+                  </h3>
                 </div>
               </div>
               <button
-                onClick={() => setActiveQuizModal(null)}
-                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100"
+                onClick={() => setActivePlayerClass(null)}
+                className="rounded-xl p-2 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
               >
-                <X className="h-4 w-4" />
+                <X className="h-5 w-5" />
               </button>
             </div>
 
-            {/* Quiz Result Display */}
-            {quizResult ? (
-              <div className="space-y-4 text-center py-4">
-                <div className={`mx-auto flex h-16 w-16 items-center justify-center rounded-full ${quizResult.passed ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
-                  {quizResult.passed ? <CheckCircle2 className="h-9 w-9" /> : <X className="h-9 w-9" />}
-                </div>
+            {/* Video Player */}
+            <div className="relative aspect-video w-full bg-black">
+              {activePlayerClass.videoUrl?.includes('youtube.com') || activePlayerClass.videoUrl?.includes('youtu.be') ? (
+                <iframe
+                  src={`${activePlayerClass.videoUrl}?autoplay=1&rel=0`}
+                  title={activePlayerClass.title}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  className="h-full w-full border-0"
+                />
+              ) : (
+                <video
+                  src={activePlayerClass.videoUrl}
+                  controls
+                  autoPlay
+                  className="h-full w-full"
+                >
+                  Your browser does not support HTML5 video streaming.
+                </video>
+              )}
+            </div>
 
+            {/* Bottom Interactive Panel */}
+            <div className="p-5 bg-slate-950 overflow-y-auto max-h-60 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
                 <div>
-                  <h4 className="text-lg font-extrabold text-slate-900">
-                    {quizResult.passed ? '🎉 Assessment Passed!' : '⚠️ Assessment Not Cleared'}
+                  <h4 className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">
+                    Lecture Description & Faculty
                   </h4>
-                  <p className="text-2xl font-black mt-1 text-slate-900">
-                    {quizResult.score}% <span className="text-xs text-slate-500 font-normal">({quizResult.correctCount} of {quizResult.totalCount} correct)</span>
+                  <p className="text-xs text-slate-300 mt-1">
+                    Delivered by <strong className="text-white">{activePlayerClass.faculty}</strong> on {activePlayerClass.date}
                   </p>
-                  <p className="text-xs text-slate-600 mt-2 max-w-sm mx-auto">
-                    {quizResult.passed
-                      ? 'Excellent work! Your quiz score has been verified and recorded in your learning velocity telemetry.'
-                      : 'You scored below the required passing percentage. Please re-read the module materials and try again.'}
+                  <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                    {activePlayerClass.description}
                   </p>
                 </div>
 
-                <div className="pt-4 border-t border-slate-100 flex justify-center space-x-2">
+                {/* Quick Actions */}
+                <div className="flex items-center space-x-2 shrink-0">
                   <button
                     onClick={() => {
-                      setQuizResult(null);
-                      setSelectedAnswers({});
+                      toggleWatched(activePlayerClass.id);
                     }}
-                    className="rounded-xl border border-slate-300 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                    className={`flex items-center space-x-1.5 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all cursor-pointer ${
+                      watchedClasses.includes(activePlayerClass.id)
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                    }`}
                   >
-                    Retake Quiz
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    <span>{watchedClasses.includes(activePlayerClass.id) ? 'Completed' : 'Mark as Watched'}</span>
                   </button>
+
                   <button
-                    onClick={() => setActiveQuizModal(null)}
-                    className="rounded-xl bg-purple-900 px-5 py-2 text-xs font-bold text-white shadow-xs hover:bg-purple-800"
+                    onClick={() => navigate('/student/submissions?tab=editor')}
+                    className="flex items-center space-x-1.5 rounded-xl bg-blue-600 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-blue-500 transition-colors cursor-pointer"
                   >
-                    Done & Return
+                    <Code2 className="h-3.5 w-3.5" />
+                    <span>Open Code Sandbox</span>
                   </button>
                 </div>
               </div>
-            ) : (
-              /* Quiz Questions Form */
-              <form onSubmit={handleSubmitQuiz} className="space-y-5 text-xs">
-                {(activeQuizModal.questions || []).map((q, qIdx) => {
-                  const qId = q.id || qIdx;
-                  return (
-                    <div key={qId} className="rounded-xl border border-slate-200 bg-slate-50/60 p-4 space-y-3">
-                      <p className="font-bold text-slate-900 text-sm">
-                        Q{qIdx + 1}. {q.question}
-                      </p>
-                      <div className="space-y-2">
-                        {q.options?.map((opt, optIdx) => (
-                          <label
-                            key={optIdx}
-                            onClick={() => handleSelectOption(qId, optIdx)}
-                            className={`flex items-center space-x-3 rounded-xl border p-3 cursor-pointer transition-all ${
-                              selectedAnswers[qId] === optIdx
-                                ? 'border-purple-600 bg-purple-50 text-purple-950 font-bold shadow-xs'
-                                : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-800'
-                            }`}
-                          >
-                            <input
-                              type="radio"
-                              name={`question-${qId}`}
-                              checked={selectedAnswers[qId] === optIdx}
-                              onChange={() => handleSelectOption(qId, optIdx)}
-                              className="text-purple-600 focus:ring-purple-500"
-                            />
-                            <span>{opt}</span>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
 
-                <div className="pt-3 border-t border-slate-100 flex items-center justify-end space-x-2">
-                  <button
-                    type="button"
-                    onClick={() => setActiveQuizModal(null)}
-                    className="rounded-xl border border-slate-300 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex items-center space-x-1.5 rounded-xl bg-purple-900 px-5 py-2 text-xs font-bold text-white shadow hover:bg-purple-800 transition-colors"
-                  >
-                    <Send className="h-3.5 w-3.5" />
-                    <span>Submit Assessment</span>
-                  </button>
+              {/* Interactive Timestamps */}
+              {activePlayerClass.timestamps && activePlayerClass.timestamps.length > 0 && (
+                <div>
+                  <h4 className="text-xs font-extrabold text-slate-400 uppercase tracking-wider mb-2">
+                    Key Topics & Timeline Segments
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {activePlayerClass.timestamps.map((t, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center space-x-2.5 rounded-xl bg-slate-900 border border-slate-800 p-2.5 text-xs text-slate-300"
+                      >
+                        <span className="rounded bg-blue-900/60 text-blue-400 font-mono font-bold px-2 py-0.5 text-[11px]">
+                          {t.time}
+                        </span>
+                        <span className="truncate">{t.label}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </form>
-            )}
+              )}
+            </div>
           </div>
         </div>
       )}

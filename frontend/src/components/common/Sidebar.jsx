@@ -60,7 +60,7 @@ export const Sidebar = ({ isOpen, onClose, onToggle }) => {
         { label: 'My Submissions', path: '/student/submissions?tab=history', icon: <FileCode2 className="h-3.5 w-3.5" /> },
       ],
     },
-    { label: 'My Learning Courses', path: '/student/learning', icon: <BookOpen className="h-4 w-4" /> },
+    { label: 'Recorded Classes Hub', path: '/student/learning', icon: <Video className="h-4 w-4" /> },
     { label: 'Scheduled Meetings', path: '/student/meetings', icon: <Video className="h-4 w-4" /> },
     { label: 'Capstone Projects', path: '/student/projects', icon: <FolderGit2 className="h-4 w-4" /> },
     { label: 'Tasks Kanban', path: '/student/tasks', icon: <CheckSquare className="h-4 w-4" /> },
@@ -92,12 +92,14 @@ export const Sidebar = ({ isOpen, onClose, onToggle }) => {
 
   const getAdminItems = () => [
     { label: 'Admin Dashboard', path: '/admin/dashboard', icon: <LayoutDashboard className="h-4 w-4" /> },
+    { label: 'Upload Recorded Classes', path: '/admin/recorded-classes', icon: <Video className="h-4 w-4" /> },
     { label: 'Institutions Verification', path: '/admin/institutions', icon: <Building2 className="h-4 w-4" /> },
     { label: 'Users Management', path: '/admin/users', icon: <Users className="h-4 w-4" /> },
     { label: 'Platform Analytics', path: '/admin/analytics', icon: <BarChart3 className="h-4 w-4" /> },
     { label: 'Security & Audit Logs', path: '/admin/audit-logs', icon: <ShieldAlert className="h-4 w-4" /> },
     { label: 'Settings', path: '/student/profile', icon: <Settings className="h-4 w-4" /> },
   ];
+
 
   let items = [];
   if (role === 'MENTOR') items = getMentorItems();

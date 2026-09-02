@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { StatCard } from '../../components/common/StatCard';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { api } from '../../services/api';
-import { Building2, Users, FolderGit2, BarChart3, Check, X, ShieldCheck } from 'lucide-react';
+import { Building2, Users, FolderGit2, BarChart3, Check, X, ShieldCheck, Video } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export const AdminDashboard = () => {
@@ -47,17 +47,34 @@ export const AdminDashboard = () => {
           <h1 className="text-xl font-bold text-slate-900 mt-1">Super Admin Executive Dashboard</h1>
           <p className="text-xs text-slate-500">Verify institutions, monitor platform audit logs, and configure system rules</p>
         </div>
-        <Link
-          to="/admin/analytics"
-          className="flex items-center space-x-2 rounded-xl bg-emerald-900 px-4 py-2 text-xs font-semibold text-white shadow hover:bg-emerald-800"
-        >
-          <BarChart3 className="h-4 w-4" />
-          <span>Global Platform Analytics</span>
-        </Link>
+        <div className="flex items-center space-x-2">
+          <Link
+            to="/admin/recorded-classes"
+            className="flex items-center space-x-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white shadow hover:bg-blue-500"
+          >
+            <Video className="h-4 w-4" />
+            <span>Upload Recorded Classes</span>
+          </Link>
+          <Link
+            to="/admin/analytics"
+            className="flex items-center space-x-2 rounded-xl bg-emerald-900 px-4 py-2 text-xs font-semibold text-white shadow hover:bg-emerald-800"
+          >
+            <BarChart3 className="h-4 w-4" />
+            <span>Platform Analytics</span>
+          </Link>
+        </div>
       </div>
 
       {/* Global Platform Metrics */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+        <StatCard
+          title="Recorded Lectures"
+          value="4 Classes"
+          subtext="Live for students"
+          icon={Video}
+          color="blue"
+          linkTo="/admin/recorded-classes"
+        />
         <StatCard
           title="Registered Institutions"
           value={institutions.length}
@@ -68,8 +85,8 @@ export const AdminDashboard = () => {
         />
         <StatCard
           title="Total Platform Users"
-          value={analytics?.summary?.totalStudents || 128}
-          subtext="Students, Mentors, Admins"
+          value={analytics?.summary?.totalStudents || 6}
+          subtext="Students & Mentors"
           icon={Users}
           color="blue"
           linkTo="/admin/users"
@@ -83,6 +100,7 @@ export const AdminDashboard = () => {
           linkTo="/admin/users"
         />
       </div>
+
 
       {/* Institution Verification Table */}
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs space-y-4">

@@ -137,6 +137,144 @@ app.put('/api/settings/paste-lock', (req, res) => {
 });
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ─── Recorded Classes Management API ──────────────────────────────────────────
+
+// Admin uploads/edits/deletes recorded class lectures. Students stream & view them in /student/learning.
+let recordedClasses = [
+  {
+    id: 'rec-1',
+    title: 'Lecture 1: High-Concurrency WebSockets & Real-Time Signaling',
+    subject: 'Full-Stack Architecture',
+    faculty: 'Viji (Lead Mentor)',
+    duration: '48 mins',
+    date: '2026-09-01',
+    videoUrl: 'https://www.youtube.com/embed/1BfCnjr_Vjg',
+    thumbnail: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&auto=format&fit=crop&q=80',
+    description: 'Comprehensive breakdown of WebSockets, duplex TCP socket streaming, peer-to-peer WebRTC signaling handshakes, and broadcast channels.',
+    tags: ['WebSockets', 'WebRTC', 'Node.js', 'Real-Time'],
+    timestamps: [
+      { time: '02:15', label: 'Introduction to Full Duplex Sockets' },
+      { time: '14:30', label: 'WebRTC Signaling Loop & STUN Servers' },
+      { time: '28:45', label: 'Building the BroadcastChannel in React' },
+      { time: '41:10', label: 'Live Q&A & Error Handling' },
+    ],
+    uploadedBy: 'Admin Faculty',
+    uploadedAt: Date.now() - 86400000,
+  },
+  {
+    id: 'rec-2',
+    title: 'Lecture 2: Python Memory Management, AST Parsing & Custom Sandbox',
+    subject: 'Python Core & Compilers',
+    faculty: 'Viji (Lead Mentor)',
+    duration: '52 mins',
+    date: '2026-08-30',
+    videoUrl: 'https://www.youtube.com/embed/rfscVS0vtbw',
+    thumbnail: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800&auto=format&fit=crop&q=80',
+    description: 'Deep dive into Python abstract syntax tree parsing (ast module), code decomposition, sandbox safety guards, and dynamic execution traces.',
+    tags: ['Python', 'AST', 'Compilers', 'Memory'],
+    timestamps: [
+      { time: '01:00', label: 'Python Bytecode & Compiler Pipeline' },
+      { time: '16:20', label: 'AST Node Visiting & Syntax Decomposition' },
+      { time: '34:50', label: 'Safe Sandbox Execution with Restricted Builtins' },
+      { time: '47:00', label: 'Live Debugging AST Parser' },
+    ],
+    uploadedBy: 'Admin Faculty',
+    uploadedAt: Date.now() - 172800000,
+  },
+  {
+    id: 'rec-3',
+    title: 'Lecture 3: Relational Query Optimization, B-Tree Indexes & TiDB Cloud',
+    subject: 'Database Engineering',
+    faculty: 'Admin Faculty',
+    duration: '42 mins',
+    date: '2026-08-28',
+    videoUrl: 'https://www.youtube.com/embed/HXV3zeRR3h4',
+    thumbnail: 'https://images.unsplash.com/photo-1544383835-bda2bc66a55d?w=800&auto=format&fit=crop&q=80',
+    description: 'Mastering SQL joins, B-Tree index structures, clustered vs non-clustered indexes, connection pooling, and distributed TiDB query plans.',
+    tags: ['MySQL', 'TiDB', 'Indexing', 'Query Optimization'],
+    timestamps: [
+      { time: '03:40', label: 'B-Tree Index Data Structure Deep Dive' },
+      { time: '18:15', label: 'Analyzing EXPLAIN Query Execution Plans' },
+      { time: '31:00', label: 'Connecting to Cloud MySQL / TiDB Cluster' },
+    ],
+    uploadedBy: 'Admin Faculty',
+    uploadedAt: Date.now() - 259200000,
+  },
+  {
+    id: 'rec-4',
+    title: 'Lecture 4: Microservices Architecture & Containerization with Docker',
+    subject: 'Cloud & Infrastructure',
+    faculty: 'Viji (Lead Mentor)',
+    duration: '56 mins',
+    date: '2026-08-25',
+    videoUrl: 'https://www.youtube.com/embed/fqMOX6JJhGo',
+    thumbnail: 'https://images.unsplash.com/photo-1607799279861-4dd421887fb3?w=800&auto=format&fit=crop&q=80',
+    description: 'Learn how to split monolithic architectures into resilient microservices, write optimized multi-stage Dockerfiles, and deploy to cloud clusters.',
+    tags: ['Docker', 'Microservices', 'DevOps', 'Cloud'],
+    timestamps: [
+      { time: '05:10', label: 'Monolith vs Microservices Trade-offs' },
+      { time: '22:00', label: 'Writing Production-Grade Multi-Stage Dockerfiles' },
+      { time: '40:30', label: 'Service Discovery & Health Probes' },
+    ],
+    uploadedBy: 'Admin Faculty',
+    uploadedAt: Date.now() - 345600000,
+  },
+];
+
+app.get('/api/recorded-classes', (req, res) => {
+  res.json({ success: true, data: recordedClasses });
+});
+
+app.post('/api/recorded-classes', (req, res) => {
+  const { title, subject, faculty, duration, date, videoUrl, thumbnail, description, tags, timestamps } = req.body;
+  if (!title || !videoUrl) {
+    return res.status(400).json({ error: 'Title and Video URL are required' });
+  }
+
+  const newClass = {
+    id: 'rec-' + Date.now(),
+    title,
+    subject: subject || 'General Engineering',
+    faculty: faculty || 'Admin Faculty',
+    duration: duration || '45 mins',
+    date: date || new Date().toISOString().split('T')[0],
+    videoUrl,
+    thumbnail: thumbnail || 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&auto=format&fit=crop&q=80',
+    description: description || 'Recorded classroom lecture uploaded by Admin.',
+    tags: Array.isArray(tags) ? tags : (tags ? tags.split(',').map((t) => t.trim()) : ['Class Lecture']),
+    timestamps: Array.isArray(timestamps) ? timestamps : [],
+    uploadedBy: 'Super Admin',
+    uploadedAt: Date.now(),
+  };
+
+  recordedClasses.unshift(newClass);
+  return res.status(201).json({ success: true, data: newClass });
+});
+
+app.put('/api/recorded-classes/:id', (req, res) => {
+  const { id } = req.params;
+  const index = recordedClasses.findIndex((c) => c.id === id);
+  if (index === -1) {
+    return res.status(404).json({ error: 'Recorded class not found' });
+  }
+
+  recordedClasses[index] = {
+    ...recordedClasses[index],
+    ...req.body,
+    updatedAt: Date.now(),
+  };
+
+  return res.json({ success: true, data: recordedClasses[index] });
+});
+
+app.delete('/api/recorded-classes/:id', (req, res) => {
+  const { id } = req.params;
+  recordedClasses = recordedClasses.filter((c) => c.id !== id);
+  return res.json({ success: true, message: 'Class deleted successfully' });
+});
+// ─────────────────────────────────────────────────────────────────────────────
+
+
 
 
 // Error handling middleware

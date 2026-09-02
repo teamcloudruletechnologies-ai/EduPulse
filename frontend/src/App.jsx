@@ -43,8 +43,10 @@ import { AdminInstitutions } from './pages/admin/AdminInstitutions';
 import { AdminUsers } from './pages/admin/AdminUsers';
 import { AdminAnalytics } from './pages/admin/AdminAnalytics';
 import { AdminAuditLogs } from './pages/admin/AdminAuditLogs';
+import { AdminRecordedClasses } from './pages/admin/AdminRecordedClasses';
 
 // Standalone Live Video Meeting Room
+
 import { LiveMeetingRoom } from './pages/meeting/LiveMeetingRoom';
 
 const MainLayout = ({ children }) => {
@@ -136,12 +138,14 @@ export const App = () => {
 
             {/* Super Admin Routes */}
             <Route path="/admin/dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+            <Route path="/admin/recorded-classes" element={<ProtectedRoute><AdminRecordedClasses /></ProtectedRoute>} />
             <Route path="/admin/institutions" element={<ProtectedRoute><AdminInstitutions /></ProtectedRoute>} />
             <Route path="/admin/users" element={<ProtectedRoute><AdminUsers /></ProtectedRoute>} />
             <Route path="/admin/analytics" element={<ProtectedRoute><AdminAnalytics /></ProtectedRoute>} />
             <Route path="/admin/audit-logs" element={<ProtectedRoute><AdminAuditLogs /></ProtectedRoute>} />
             <Route path="/admin/settings" element={<ProtectedRoute><StudentProfile /></ProtectedRoute>} />
             <Route path="/admin/*" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+
 
             {/* Default Fallback */}
             <Route path="*" element={<Navigate to="/student/dashboard" replace />} />
