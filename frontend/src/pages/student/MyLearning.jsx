@@ -17,11 +17,18 @@ import {
   Code2,
   ExternalLink,
   BookOpen,
-  Download,
-  Share2,
   Check,
   RefreshCw,
+  RotateCcw,
+  RotateCw,
+  Lock,
+  Unlock,
+  ShieldAlert,
+  FastForward,
+  Rewind,
+  AlertCircle,
 } from 'lucide-react';
+
 
 const DEFAULT_RECORDED_CLASSES = [
   {
@@ -130,6 +137,21 @@ export const MyLearning = () => {
     return ['rec-1'];
   });
 
+  // 10-Second Skip Limit System (Max 5 skips allowed per lecture)
+  const MAX_SKIPS_ALLOWED = 5;
+  const [skipCounts, setSkipCounts] = useState(() => {
+    const saved = localStorage.getItem('edtech_lecture_skip_counts');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {}
+    }
+    return {};
+  });
+
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
+  const [videoTimestampSec, setVideoTimestampSec] = useState(0);
+
   const fetchClasses = async () => {
     try {
       const res = await api.get('/recorded-classes');
@@ -160,6 +182,55 @@ export const MyLearning = () => {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
+  // Handle +10s Skip Forward with strict 5-time quota limit
+  const handleSkipForward = (classId) => {
+    const currentUsed = skipCounts[classId] || 0;
+    if (currentUsed >= MAX_SKIPS_ALLOWED) {
+      showToast(
+        `⛔ Skip Limit Reached! You have used all 5 skips (10s × 5) for this lecture. Skipping is locked to ensure attentive learning.`,
+        'error'
+      );
+      return;
+    }
+
+    const nextCount = currentUsed + 1;
+    const remaining = MAX_SKIPS_ALLOWED - nextCount;
+    const updatedCounts = { ...skipCounts, [classId]: nextCount };
+    setSkipCounts(updatedCounts);
+    localStorage.setItem('edtech_lecture_skip_counts', JSON.stringify(updatedCounts));
+
+    // Seek HTML5 video or update timestamp
+    const videoEl = document.getElementById('class-video-element');
+    if (videoEl) {
+      videoEl.currentTime = Math.min(videoEl.duration || 9999, videoEl.currentTime + 10);
+    } else {
+      setVideoTimestampSec((prev) => prev + 10);
+    }
+
+    if (remaining === 0) {
+      showToast(
+        `🔒 Last skip used! (5/5). 10-second forward skipping is now locked for this lecture.`,
+        'warning'
+      );
+    } else {
+      showToast(
+        `⏩ Skipped +10s (${remaining} of ${MAX_SKIPS_ALLOWED} skips remaining)`,
+        'info'
+      );
+    }
+  };
+
+  // Handle -10s Rewind (Always allowed for reviewing concepts)
+  const handleRewind = (classId) => {
+    const videoEl = document.getElementById('class-video-element');
+    if (videoEl) {
+      videoEl.currentTime = Math.max(0, videoEl.currentTime - 10);
+    } else {
+      setVideoTimestampSec((prev) => Math.max(0, prev - 10));
+    }
+    showToast('⏪ Rewound -10s for review', 'info');
+  };
+
   const toggleWatched = (classId, e) => {
     if (e) e.stopPropagation();
     setWatchedClasses((prev) => {
@@ -176,6 +247,7 @@ export const MyLearning = () => {
       return updated;
     });
   };
+
 
   const subjects = ['ALL', ...Array.from(new Set(classes.map((c) => c.subject)))];
 
@@ -394,27 +466,53 @@ export const MyLearning = () => {
                   <Film className="h-5 w-5" />
                 </div>
                 <div>
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-blue-400">
-                    {activePlayerClass.subject} • {activePlayerClass.duration}
-                  </span>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-blue-400">
+                      {activePlayerClass.subject} • {activePlayerClass.duration}
+                    </span>
+                    {/* Live 10s Skip Quota Badge */}
+                    <span
+                      className={`flex items-center space-x-1 rounded-md px-2 py-0.5 text-[10px] font-extrabold border ${
+                        (skipCounts[activePlayerClass.id] || 0) >= MAX_SKIPS_ALLOWED
+                          ? 'bg-rose-950/80 border-rose-700 text-rose-400'
+                          : 'bg-amber-950/80 border-amber-700 text-amber-300'
+                      }`}
+                    >
+                      {(skipCounts[activePlayerClass.id] || 0) >= MAX_SKIPS_ALLOWED ? (
+                        <>
+                          <Lock className="h-3 w-3 text-rose-400" />
+                          <span>10s Skips: 0/{MAX_SKIPS_ALLOWED} (Locked)</span>
+                        </>
+                      ) : (
+                        <>
+                          <FastForward className="h-3 w-3 text-amber-400" />
+                          <span>10s Skips: {MAX_SKIPS_ALLOWED - (skipCounts[activePlayerClass.id] || 0)}/{MAX_SKIPS_ALLOWED} Left</span>
+                        </>
+                      )}
+                    </span>
+                  </div>
                   <h3 className="text-sm font-bold text-white truncate max-w-xl">
                     {activePlayerClass.title}
                   </h3>
                 </div>
               </div>
-              <button
-                onClick={() => setActivePlayerClass(null)}
-                className="rounded-xl p-2 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
-              >
-                <X className="h-5 w-5" />
-              </button>
+
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => setActivePlayerClass(null)}
+                  className="rounded-xl p-2 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
             </div>
 
             {/* Video Player */}
             <div className="relative aspect-video w-full bg-black">
               {activePlayerClass.videoUrl?.includes('youtube.com') || activePlayerClass.videoUrl?.includes('youtu.be') ? (
                 <iframe
-                  src={`${activePlayerClass.videoUrl}?autoplay=1&rel=0`}
+                  id="class-video-iframe"
+                  src={`${activePlayerClass.videoUrl}?autoplay=1&rel=0&start=${videoTimestampSec}`}
                   title={activePlayerClass.title}
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
@@ -422,6 +520,7 @@ export const MyLearning = () => {
                 />
               ) : (
                 <video
+                  id="class-video-element"
                   src={activePlayerClass.videoUrl}
                   controls
                   autoPlay
@@ -430,6 +529,80 @@ export const MyLearning = () => {
                   Your browser does not support HTML5 video streaming.
                 </video>
               )}
+            </div>
+
+            {/* Custom Interactive Skip & Speed Control Toolbar */}
+            <div className="px-5 py-3 bg-slate-900 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
+              {/* Left: 10s Rewind and 10s Skip Buttons */}
+              <div className="flex items-center space-x-2">
+                {/* 10s Rewind (Always allowed) */}
+                <button
+                  onClick={() => handleRewind(activePlayerClass.id)}
+                  className="flex items-center space-x-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 px-3.5 py-1.5 font-bold transition-all cursor-pointer active:scale-95"
+                  title="Rewind 10 Seconds (Unlimited for review)"
+                >
+                  <Rewind className="h-3.5 w-3.5 text-blue-400" />
+                  <span>-10s Rewind</span>
+                </button>
+
+                {/* 10s Forward Skip (Locked after 5 uses) */}
+                <button
+                  onClick={() => handleSkipForward(activePlayerClass.id)}
+                  disabled={(skipCounts[activePlayerClass.id] || 0) >= MAX_SKIPS_ALLOWED}
+                  className={`flex items-center space-x-1.5 rounded-xl px-3.5 py-1.5 font-bold transition-all ${
+                    (skipCounts[activePlayerClass.id] || 0) >= MAX_SKIPS_ALLOWED
+                      ? 'bg-rose-950/60 border border-rose-800/80 text-rose-400 cursor-not-allowed opacity-80'
+                      : 'bg-blue-600 hover:bg-blue-500 text-white shadow-md cursor-pointer active:scale-95'
+                  }`}
+                  title={
+                    (skipCounts[activePlayerClass.id] || 0) >= MAX_SKIPS_ALLOWED
+                      ? 'Skip limit reached (5/5). Skipping is locked.'
+                      : 'Skip forward 10s'
+                  }
+                >
+                  {(skipCounts[activePlayerClass.id] || 0) >= MAX_SKIPS_ALLOWED ? (
+                    <>
+                      <Lock className="h-3.5 w-3.5 text-rose-400" />
+                      <span>+10s Locked (0/5)</span>
+                    </>
+                  ) : (
+                    <>
+                      <FastForward className="h-3.5 w-3.5 text-white" />
+                      <span>+10s Skip ({MAX_SKIPS_ALLOWED - (skipCounts[activePlayerClass.id] || 0)} left)</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Center: Anti-Cheat Quota Info */}
+              <div className="hidden md:flex items-center space-x-2 text-[11px]">
+                {(skipCounts[activePlayerClass.id] || 0) >= MAX_SKIPS_ALLOWED ? (
+                  <span className="flex items-center space-x-1 text-rose-400 font-bold bg-rose-950/40 border border-rose-800 px-2.5 py-1 rounded-lg">
+                    <ShieldAlert className="h-3.5 w-3.5" />
+                    <span>Anti-Skip Policy: Maximum 5 skips reached. Watch lecture continuously.</span>
+                  </span>
+                ) : (
+                  <span className="text-slate-400">
+                    💡 Anti-Skip Policy: Max 5 forward skips (10s × 5) per lecture session.
+                  </span>
+                )}
+              </div>
+
+              {/* Right: Quick Reset (Demo) & Speed */}
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => {
+                    const updated = { ...skipCounts, [activePlayerClass.id]: 0 };
+                    setSkipCounts(updated);
+                    localStorage.setItem('edtech_lecture_skip_counts', JSON.stringify(updated));
+                    showToast('🔄 10s Skip quota reset to 5/5 for this lecture!', 'success');
+                  }}
+                  className="text-[10px] text-slate-500 hover:text-slate-300 underline cursor-pointer"
+                  title="Reset skip count for demonstration"
+                >
+                  Reset Quota
+                </button>
+              </div>
             </div>
 
             {/* Bottom Interactive Panel */}
@@ -472,6 +645,7 @@ export const MyLearning = () => {
                   </button>
                 </div>
               </div>
+
 
               {/* Interactive Timestamps */}
               {activePlayerClass.timestamps && activePlayerClass.timestamps.length > 0 && (
